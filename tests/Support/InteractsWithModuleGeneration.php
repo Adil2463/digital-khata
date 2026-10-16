@@ -57,13 +57,7 @@ trait InteractsWithModuleGeneration
      */
     protected function runGenerateCommand(array $arguments): PendingCommand
     {
-        $pendingCommand = $this->artisan('generate:module', $arguments);
-
-        if (is_int($pendingCommand)) {
-            $this->fail('Expected a PendingCommand instance while running generate:module.');
-        }
-
-        return $pendingCommand;
+        return $this->pendingArtisan('generate:module', $arguments);
     }
 
     /**

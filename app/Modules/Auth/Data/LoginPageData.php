@@ -11,7 +11,6 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 final class LoginPageData extends Data
 {
     public function __construct(
-        public bool $canResetPassword,
         public ?string $status,
     ) {}
 }

@@ -57,7 +57,11 @@ export function useNavigation() {
     const dashboardFooterItems = computed<ActiveNavItem[]>(() => withActiveItems(buildDashboardFooterItems()))
     const marketingPrimaryItems = computed<ActiveNavItem[]>(() => withActiveItems(buildMarketingPrimaryItems(context.value)))
     const marketingPrimaryAction = computed<ActiveNavItem>(() => withActiveItem(buildMarketingPrimaryAction(context.value)))
-    const marketingSecondaryAction = computed<ActiveNavItem>(() => withActiveItem(buildMarketingSecondaryAction(context.value)))
+    const marketingSecondaryAction = computed<ActiveNavItem | null>(() => {
+        const item = buildMarketingSecondaryAction(context.value)
+
+        return item === null ? null : withActiveItem(item)
+    })
     const marketingFooterGroups = computed<ActiveNavigationGroup[]>(() =>
         buildMarketingFooterGroups(context.value).map((group) => ({
             ...group,

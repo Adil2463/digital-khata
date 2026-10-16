@@ -5,7 +5,6 @@ import IconLucideLayoutGrid from '~icons/lucide/layout-grid'
 import IconLucideLockKeyhole from '~icons/lucide/lock-keyhole'
 import IconLucideLogIn from '~icons/lucide/log-in'
 import IconLucideSettings from '~icons/lucide/settings'
-import IconLucideUserPlus from '~icons/lucide/user-plus'
 import IconLucideUsers from '~icons/lucide/users'
 import appRoutes from '../routes/app'
 import authRoutes from '../routes/auth'
@@ -29,7 +28,6 @@ const navRoutes = {
     settingsProfile: () => appRoutes.settings.profile.edit.url(),
     settingsPassword: () => appRoutes.settings.password.edit.url(),
     settingsAppearance: () => appRoutes.settings.appearance.url(),
-    authRegister: () => authRoutes.register.create.url(),
     authLogin: () => authRoutes.login.create.url()
 }
 
@@ -123,25 +121,21 @@ export const buildMarketingPrimaryAction = (context: NavigationContext): NavItem
     }
 
     return {
-        title: 'Get started',
-        href: navRoutes.authRegister(),
-        icon: IconLucideUserPlus
-    }
-}
-
-export const buildMarketingSecondaryAction = (context: NavigationContext): NavItem => {
-    if (context.isAuthenticated) {
-        return {
-            title: 'Settings',
-            href: navRoutes.settingsProfile(),
-            icon: IconLucideSettings
-        }
-    }
-
-    return {
         title: 'Log in',
         href: navRoutes.authLogin(),
         icon: IconLucideLogIn
+    }
+}
+
+export const buildMarketingSecondaryAction = (context: NavigationContext): NavItem | null => {
+    if (!context.isAuthenticated) {
+        return null
+    }
+
+    return {
+        title: 'Settings',
+        href: navRoutes.settingsProfile(),
+        icon: IconLucideSettings
     }
 }
 
@@ -176,10 +170,6 @@ export const buildMarketingFooterGroups = (context: NavigationContext): Navigati
               {
                   title: 'Log in',
                   href: navRoutes.authLogin()
-              },
-              {
-                  title: 'Create account',
-                  href: navRoutes.authRegister()
               }
           ]
 

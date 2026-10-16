@@ -1,7 +1,7 @@
 <script setup lang="ts">
     const theme = appTheme
 
-    const { isAuthenticated, marketingPrimaryAction, marketingPrimaryItems, marketingSecondaryAction } = useNavigation()
+    const { marketingPrimaryAction, marketingPrimaryItems, marketingSecondaryAction } = useNavigation()
 
     const hasPrimaryNavigation = computed(() => marketingPrimaryItems.value.length > 1)
     const marketingHomeHref = marketingRoutes.home.url()
@@ -31,7 +31,12 @@
                 </nav>
 
                 <div class="ml-auto hidden items-center gap-2 md:flex">
-                    <UiButton variant="ghost" class="h-9 rounded-lg px-4 text-muted-foreground hover:text-foreground" as-child>
+                    <UiButton
+                        v-if="marketingSecondaryAction"
+                        variant="ghost"
+                        class="h-9 rounded-lg px-4 text-muted-foreground hover:text-foreground"
+                        as-child
+                    >
                         <Link :href="marketingSecondaryAction.href">
                             {{ marketingSecondaryAction.title }}
                         </Link>
@@ -74,7 +79,7 @@
                                 </nav>
 
                                 <div class="grid gap-2 border-t border-border/70 pt-6">
-                                    <UiButton :variant="isAuthenticated ? 'outline' : 'ghost'" class="h-10 justify-start px-3" as-child>
+                                    <UiButton v-if="marketingSecondaryAction" variant="outline" class="h-10 justify-start px-3" as-child>
                                         <Link :href="marketingSecondaryAction.href">
                                             {{ marketingSecondaryAction.title }}
                                         </Link>

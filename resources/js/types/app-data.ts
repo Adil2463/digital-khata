@@ -29,8 +29,12 @@ export type CursorPaginator<TKey, TValue> = {
     }
 }
 export type CursorPaginatorInterface<TKey, TValue> = CursorPaginator<TKey, TValue>
-export type ForgotPasswordPageData = {
-    status: string | null
+export type InstallShopData = {
+    shopName: string
+    timezone: string
+    ownerName: string
+    ownerEmail: string
+    ownerPassword: string
 }
 export type LengthAwarePaginator<TKey, TValue> = {
     data: TKey extends string ? Record<TKey, TValue> : TValue[]
@@ -60,7 +64,6 @@ export type LoginData = {
     remember: boolean
 }
 export type LoginPageData = {
-    canResetPassword: boolean
     status: string | null
 }
 export type PaginatedDataCollection<TKey, TValue> = LengthAwarePaginator<TKey, TValue>
@@ -73,9 +76,6 @@ export type PaginationData = {
 export type PaginationQueryData = {
     page: number
     perPage: number
-}
-export type PasswordResetLinkData = {
-    email: string
 }
 export type PasswordUpdateData = {
     currentPassword: string
@@ -97,21 +97,6 @@ export type ProfilePageData = {
 export type ProfileUpdateData = {
     name: string
     email: string
-}
-export type RegisterUserData = {
-    name: string
-    email: string
-    password: string
-}
-export type ResetPasswordData = {
-    token: string
-    email: string
-    password: string
-    passwordConfirmation: string
-}
-export type ResetPasswordPageData = {
-    email: string
-    token: string
 }
 export type SharedAuthData = {
     user: UserViewData | null

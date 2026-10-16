@@ -29,7 +29,7 @@
                             {{ marketingPrimaryAction.title }}
                         </Link>
                     </UiButton>
-                    <UiButton variant="outline" class="h-11 w-full px-6 sm:w-auto" as-child>
+                    <UiButton v-if="marketingSecondaryAction" variant="outline" class="h-11 w-full px-6 sm:w-auto" as-child>
                         <Link :href="marketingSecondaryAction.href">
                             {{ marketingSecondaryAction.title }}
                         </Link>

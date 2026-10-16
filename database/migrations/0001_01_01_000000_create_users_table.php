@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\UserRole;
 use App\Models\User;
-use App\Modules\Users\Data\CreateUserData;
+use App\Modules\Shared\Auth\DemoAccounts;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -14,31 +14,19 @@ return new class extends Migration
 {
     public static function seedUsers(): void
     {
-        if (config('database.seed_users') !== true) {
+        // Demo credentials are public; production must never create them, whatever the environment says.
+        if (config('database.seed_users') !== true || app()->isProduction()) {
             return;
         }
 
-        $usersDataList = [
-            new CreateUserData(
-                name: 'Admin',
-                email: 'admin@app.com',
-                role: UserRole::Admin,
-                password: 'Admin123!@#',
-            ),
-            new CreateUserData(
-                name: 'User',
-                email: 'user@app.com',
-                role: UserRole::User,
-                password: 'User123!@#',
-            ),
-        ];
-
-        foreach ($usersDataList as $userDataList) {
+        foreach (DemoAccounts::CREDENTIALS as $credential) {
             User::updateOrCreate(
-                ['email' => $userDataList->email],
+                ['email' => $credential['email']],
                 [
-                    ...$userDataList->transform(),
-                    'email_verified_at' => $userDataList->role === UserRole::Admin ? CarbonImmutable::now() : null,
+                    'name' => $credential['name'],
+                    'role' => $credential['role'],
+                    'password' => $credential['password'],
+                    'email_verified_at' => $credential['role'] === UserRole::Admin ? CarbonImmutable::now() : null,
                 ]
             );
         }

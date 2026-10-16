@@ -13,6 +13,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -24,6 +25,7 @@ use Override;
  * @property string $email
  * @property string $password
  * @property UserRole $role
+ * @property int|null $shop_id
  * @property CarbonInterface|null $email_verified_at
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
@@ -41,6 +43,14 @@ final class User extends Authenticatable implements MustVerifyEmailContract
     protected $guarded = [];
 
     protected $hidden = ['password', 'remember_token'];
+
+    /**
+     * @return BelongsTo<Shop, $this>
+     */
+    public function shop(): BelongsTo
+    {
+        return $this->belongsTo(Shop::class);
+    }
 
     public function receivesBroadcastNotificationsOn(): string
     {

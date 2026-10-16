@@ -25,10 +25,11 @@ TypeScript uses the 7.0.2 native checker through the exactly pinned `typescript-
 
 ```bash
 composer setup
+php artisan khata:install
 composer dev
 ```
 
-`composer setup` is Laravel's first-run script: it installs the locked Composer and npm dependencies, creates `.env`, generates the application key, runs migrations, and builds the assets. `composer dev` serves the app at `http://127.0.0.1:8000`. If you serve it from another host or port, set `APP_URL` to that origin so Sanctum treats first-party API requests as stateful.
+`composer setup` is Laravel's first-run script: it installs the locked Composer and npm dependencies, creates `.env`, generates the application key, runs migrations, and builds the assets. `php artisan khata:install` then creates the shop and its verified owner account; it runs once and asks for the owner password in a hidden prompt. There is no public registration and no email password reset; a forgotten password is reset with `php artisan khata:user:reset-password <email>`. Demo accounts are only created when `APP_SEED_USERS=true` outside production, and `khata:install` locks any that still use their published passwords. `composer dev` serves the app at `http://127.0.0.1:8000`. If you serve it from another host or port, set `APP_URL` to that origin so Sanctum treats first-party API requests as stateful.
 
 Realtime dev dependencies are included in `composer dev`; this starts Laravel Reverb alongside the web server, queue worker, logs, and Vite.
 
@@ -121,8 +122,6 @@ Canonical frontend presentation contracts:
 - `GET /` => `marketing.home`
 - `GET /auth/login` => `auth.login.create`
 - `POST /auth/login` => `auth.login.store`
-- `GET /auth/register` => `auth.register.create`
-- `POST /auth/register` => `auth.register.store`
 - `POST /auth/logout` => `auth.logout`
 - `GET /app/dashboard` => `app.dashboard`
 - `GET /app/settings/profile` => `app.settings.profile.edit`
@@ -195,7 +194,7 @@ paint has to arrive as markup rather than as a side effect of the JS bundle:
 
 User-management side effects dispatch after successful persistence and transaction commit. The client clears cached and mounted account data when identity changes; outstanding mutations skip subsequent callbacks and cache invalidations from the previous account.
 
-Inertia history encryption is enabled by default and its key rotates on login, registration, logout, and account deletion. Serve the app over HTTPS or localhost so the browser's Web Crypto API is available. An existing `INERTIA_ENCRYPT_HISTORY=false` override disables this protection. Unverified users are redirected to the namespaced verification page through the shared `verified` middleware alias.
+Inertia history encryption is enabled by default and its key rotates on login, logout, and account deletion. Serve the app over HTTPS or localhost so the browser's Web Crypto API is available. An existing `INERTIA_ENCRYPT_HISTORY=false` override disables this protection. Unverified users are redirected to the namespaced verification page through the shared `verified` middleware alias.
 
 ## Testing
 
@@ -230,7 +229,7 @@ CI also runs `composer audit --locked` and `npm audit`. The production PM2 examp
 
 ## Deployment
 
-`hosting/` contains a ready-to-use nginx site for a single Linux server, in two variants: behind a TLS-terminating proxy, or with nginx serving HTTPS through Let's Encrypt. Both serve Reverb on the application's own domain, alongside the PM2 processes in `pm2.config.cjs`. Follow [docs/deployment.md](docs/deployment.md) for the production `.env`, build, site, log rotation, and update steps. In particular, set `APP_SEED_USERS=false` before the first production migration, and set `TRUSTED_PROXIES` when a proxy terminates TLS.
+`hosting/` contains a ready-to-use nginx site for a single Linux server, in two variants: behind a TLS-terminating proxy, or with nginx serving HTTPS through Let's Encrypt. Both serve Reverb on the application's own domain, alongside the PM2 processes in `pm2.config.cjs`. Follow [docs/deployment.md](docs/deployment.md) for the production `.env`, build, site, log rotation, and update steps. In particular, keep `APP_SEED_USERS=false` (demo accounts are never seeded in production), run `php artisan khata:install` once after the first migration, and set `TRUSTED_PROXIES` when a proxy terminates TLS.
 
 ## Working With Coding Agents
 

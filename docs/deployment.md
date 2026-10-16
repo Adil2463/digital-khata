@@ -45,8 +45,7 @@ APP_DEBUG=false
 APP_URL=https://example.com
 LOG_LEVEL=warning
 
-# The users migration otherwise creates admin@app.com and user@app.com with
-# the passwords published in the migration. Set this before the first migrate.
+# Demo accounts are never seeded in production; keep this false everywhere real data lives.
 APP_SEED_USERS=false
 
 # Behind a TLS-terminating proxy only; see "Choose a topology".
@@ -79,6 +78,12 @@ npm run build:ssr
 php artisan migrate --force
 php artisan storage:link
 php artisan optimize
+```
+
+On the first deployment only, create the shop and its owner interactively (the password is read from a hidden prompt and never logged):
+
+```bash
+php artisan khata:install
 ```
 
 Keep `node_modules` after the build: the SSR bundle in `bootstrap/ssr` imports its dependencies at runtime. Make sure `public/hot` does not exist in production; it points pages at a Vite dev server.

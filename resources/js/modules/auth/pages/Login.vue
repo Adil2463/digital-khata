@@ -8,7 +8,6 @@
     defineProps<LoginPageData>()
 
     const { form, fields, submit } = useSchemaResourceForm<LoginFormValues>(loginFormContract)
-    const passwordRequestHref = authRoutes.password.request.url()
 
     const submitForm = () => {
         submit(AuthenticatedSessionController.store(), {
@@ -38,9 +37,7 @@
             <template #actions>
                 <div class="space-y-4">
                     <BaseButton type="submit" full-width :loading="form.processing" label="Log in" />
-                    <div class="flex items-center justify-between">
-                        <TextLink v-if="canResetPassword" :href="passwordRequestHref" class="text-sm">Forgot password?</TextLink>
-                    </div>
+                    <p class="text-center text-sm text-muted-foreground">Forgot your password? Ask the shop owner to reset it.</p>
                 </div>
             </template>
         </BaseFormsBaseFormRenderer>

@@ -200,7 +200,7 @@ For every non-trivial change, explicitly verify all affected layers before consi
     - `Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets`
 - Guest redirects are configured centrally in `bootstrap/app.php` to `route('auth.login.create')`, and authenticated users visiting guest-only routes are redirected to `route('app.dashboard')`. Laravel's own fallback looks for a route named `dashboard` or `home`, which the namespaced route names do not provide.
 - The `verified` middleware alias is configured there with Laravel's `EnsureEmailIsVerified::redirectTo('auth.verification.notice')`. Keep this central default so existing and generated protected routes share the namespaced verification prompt; JSON requests retain Laravel's 403 response.
-- Inertia history encryption defaults to enabled (`INERTIA_ENCRYPT_HISTORY=true`) and requires HTTPS or localhost. Login, registration, logout, and account deletion call `Inertia::clearHistory()` after changing the session so the next page rotates the browser history key. Query-cache clearing does not replace this protection.
+- Inertia history encryption defaults to enabled (`INERTIA_ENCRYPT_HISTORY=true`) and requires HTTPS or localhost. Login, logout, and account deletion call `Inertia::clearHistory()` after changing the session so the next page rotates the browser history key. Query-cache clearing does not replace this protection.
 - `statefulApi()` enables Sanctum session authentication and CSRF protection for API requests from configured first-party origins. Keep `SANCTUM_STATEFUL_DOMAINS` aligned with deployed frontend hosts, including ports. External clients use bearer tokens. Authentication regressions must exercise persisted cookies or real tokens; `actingAs` alone cannot verify middleware wiring.
 - Events are registered from `app/Listeners` and module-discovered listener directories via `ModuleRegistry::listenerDirectories(...)`.
 
@@ -234,7 +234,8 @@ For every non-trivial change, explicitly verify all affected layers before consi
 - Module root: `app/Modules`
 - Current modules:
     - `Marketing` - Public marketing pages
-    - `Auth` - Authentication (login, register, password reset, email verification)
+    - `Auth` - Authentication (login, logout, password confirmation, email verification) and the offline `khata:user:reset-password` command
+    - `Shop` - Digital Khata shop record and the one-time `khata:install` command
     - `Dashboard` - Authenticated app dashboard
     - `Settings` - User settings (profile, password, appearance)
     - `Users` - Admin user management with realtime
@@ -242,7 +243,18 @@ For every non-trivial change, explicitly verify all affected layers before consi
     - `Shared` - Shared infrastructure and utilities
 - Shared domain primitives remain in:
     - `app/Models/User.php`
+    - `app/Models/Shop.php`
     - `app/Enums/UserRole.php`
+- Domain models live in `app/Models` even when one module owns their writes: `ModuleRegistry` maps a module's `FooPolicy` only to `App\Models\Foo`.
+- `bootstrap/app.php` loads console commands only from `app/Modules/Shared/Console/Commands`. A module's own commands are registered by its auto-discovered `Providers/ModuleServiceProvider.php` inside `runningInConsole()`; see the `Shop` and `Auth` providers.
+
+### Accounts, Installation, And Demo Credentials
+
+- Digital Khata is a single-shop installation. There is no public registration and no email-based password reset: no mail is ever delivered. Accounts are created by `php artisan khata:install` (shop + verified owner, once) and by the owner through the Users screen.
+- Passwords are accepted only from hidden interactive prompts in `khata:install` and `khata:user:reset-password`. Both commands refuse `--no-interaction`, never print or log passwords, and validate with `Password::defaults()`.
+- `App\Modules\Shared\Auth\CredentialRotator` is the single place that replaces a password. It also rotates the remember token, deletes Sanctum tokens, and deletes the user's rows when the session driver is `database`. Other session drivers cannot be enumerated per user.
+- `App\Modules\Shared\Auth\DemoAccounts` owns the starter kit's published demo credentials. The users migration seeds them only when `APP_SEED_USERS=true` (default `false`, pinned `false` in `phpunit.xml`) and never in production. `khata:install` detects accounts still accepting those passwords and, after confirmation, locks them with `CredentialRotator::lock()`; it never deletes them. Declining cancels installation without changes.
+- `users.shop_id` is nullable until `khata:install` attaches every pre-existing account to the new shop; the shop row is `RESTRICT`-protected while users reference it.
 
 ### Backend Ownership Rules
 
@@ -467,17 +479,9 @@ When adding similar behavior, inspect and follow the nearest established referen
 - Marketing:
     - `GET /` -> `marketing.home`
 - Auth guest routes under `/auth`:
-    - `GET /auth/register` -> `auth.register.create`
-    - `POST /auth/register` -> `auth.register.store`
-        - middleware: `guest`, `throttle:auth-sensitive`
     - `GET /auth/login` -> `auth.login.create`
     - `POST /auth/login` -> `auth.login.store`
-    - `GET /auth/forgot-password` -> `auth.password.request`
-    - `POST /auth/forgot-password` -> `auth.password.email`
-        - middleware: `guest`, `throttle:auth-sensitive`
-    - `GET /auth/reset-password/{token}` -> `auth.password.reset`
-    - `POST /auth/reset-password` -> `auth.password.store`
-        - middleware: `guest`, `throttle:auth-sensitive`
+    - Registration (`/auth/register`) and email password reset (`/auth/forgot-password`, `/auth/reset-password`) intentionally do not exist; `tests/Feature/Auth/SelfServiceAccountRoutesTest.php` guards their absence.
 - Authenticated auth routes under `/auth`:
     - `GET /auth/verify-email` -> `auth.verification.notice`
     - `GET /auth/verify-email/{id}/{hash}` -> `auth.verification.verify`
@@ -701,7 +705,7 @@ When adding similar behavior, inspect and follow the nearest established referen
 
 - Enforce authorization through policies, gates, and route middleware.
 - Sensitive auth endpoints must use the `auth-sensitive` rate limiter.
-- Password confirmation uses this limiter in addition to registration, reset, and verification notification endpoints.
+- Password confirmation and verification notification endpoints use this limiter.
 - The `User` model invalidates email verification whenever its email changes through a model update, covering profile and admin transports. Bulk SQL updates bypass model events and must preserve this invariant explicitly.
 - `AppServiceProvider` currently defines `auth-sensitive` as `5` requests per minute per IP.
 - Security headers must continue to be set by `App\Http\Middleware\SecurityHeaders`.
@@ -989,7 +993,9 @@ Do not shadow them with manual duplicates.
     - `docs/frontend-automation.md`
     - `docs/how-to-add-module-page.md`
     - `docs/deployment.md`
+    - `docs/DIGITAL_KHATA_*.md`
 - Do not leave known stale instructions behind after changing the implementation.
+- `docs/DIGITAL_KHATA_*.md` hold the Digital Khata product, architecture, schema, ledger-rule, roadmap, and manual QA decisions. Sections for unimplemented phases are approved proposals, not current behavior; implement phases only after explicit approval and move each document's content from proposal to fact as code lands.
 
 ## Quality Gate
 

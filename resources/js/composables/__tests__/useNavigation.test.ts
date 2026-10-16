@@ -69,6 +69,30 @@ describe('useNavigation', () => {
         expect(marketingByTitle.get('Dashboard')?.isActive).toBe(true)
         expect(dashboardPrimaryItems.value.some((item) => item.title === 'Users')).toBe(false)
     })
+
+    it('offers guests only the login action because public registration is disabled', () => {
+        mockPage = createMockPage({ url: '/', role: null })
+        usePageMock.mockReturnValue(mockPage)
+
+        const { marketingPrimaryAction, marketingSecondaryAction, marketingFooterGroups } = useNavigation()
+        const footerTitles = marketingFooterGroups.value.flatMap((group) => group.items.map((item) => item.title))
+
+        expect(marketingPrimaryAction.value).toMatchObject({ title: 'Log in', href: '/auth/login' })
+        expect(marketingSecondaryAction.value).toBeNull()
+        expect(footerTitles).toContain('Log in')
+        expect(footerTitles).not.toContain('Create account')
+        expect(JSON.stringify(marketingFooterGroups.value)).not.toContain('/auth/register')
+    })
+
+    it('keeps the settings shortcut for authenticated visitors', () => {
+        mockPage = createMockPage({ url: '/', role: UserRole.User })
+        usePageMock.mockReturnValue(mockPage)
+
+        const { marketingPrimaryAction, marketingSecondaryAction } = useNavigation()
+
+        expect(marketingPrimaryAction.value.title).toBe('Open dashboard')
+        expect(marketingSecondaryAction.value?.title).toBe('Settings')
+    })
 })
 
 function createMockPage({ url, role }: { url: string; role: UserRole | null }): MockPage {

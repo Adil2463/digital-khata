@@ -8,7 +8,7 @@ return [
 
     'default' => env('DB_CONNECTION', 'sqlite'),
 
-    'seed_users' => (bool) env('APP_SEED_USERS', true),
+    'seed_users' => (bool) env('APP_SEED_USERS', false),
 
     'connections' => [
 

@@ -15,8 +15,8 @@ test('login screen can be rendered', function (): void {
         ->assertStatus(200)
         ->assertViewHas('page.encryptHistory', true)
         ->assertInertia(fn (Assert $assert): Assert => $assert
-            ->where('canResetPassword', true)
             ->where('status', null)
+            ->missing('canResetPassword')
         );
 });
 test('users can authenticate using the login screen', function (): void {
@@ -36,7 +36,7 @@ test('authenticated users are redirected from guest screens to the dashboard', f
     $this->actingAs(User::factory()->create())
         ->get($uri)
         ->assertRedirect(route('app.dashboard', absolute: false));
-})->with(['/auth/login', '/auth/register', '/auth/forgot-password']);
+})->with(['/auth/login']);
 test('users can not authenticate with invalid password', function (): void {
     $user = User::factory()->create();
 
