@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\ShopTimezone;
 use App\Enums\UserRole;
 use App\Models\Shop;
 use App\Models\User;
@@ -51,7 +52,7 @@ test('it creates the shop and a verified owner without printing the password', f
     $user = User::query()->where('email', 'owner@shop.local')->sole();
 
     expect($shop->name)->toBe('Bismillah Karyana Store')
-        ->and($shop->timezone)->toBe(Shop::DEFAULT_TIMEZONE)
+        ->and($shop->timezone)->toBe(ShopTimezone::AsiaKarachi)
         ->and($user->role)->toBe(UserRole::Admin)
         ->and($user->shop_id)->toBe($shop->id)
         ->and($user->hasVerifiedEmail())->toBeTrue()
@@ -68,18 +69,18 @@ test('the installed owner can log in and open the dashboard', function (): void 
     $this->get('/app/dashboard')->assertOk();
 });
 
-test('it normalizes the owner email and honours a custom timezone', function (): void {
+test('it normalizes the owner email and accepts the supported timezone explicitly', function (): void {
     $this->pendingArtisan('khata:install', [
         '--shop-name' => '  Corner Shop  ',
         '--owner-name' => 'Owner',
         '--owner-email' => '  Owner@Shop.Local ',
-        '--timezone' => 'Asia/Dubai',
+        '--timezone' => 'Asia/Karachi',
     ])
         ->expectsQuestion('Owner password', OWNER_PASSWORD)
         ->expectsQuestion('Confirm owner password', OWNER_PASSWORD)
         ->assertSuccessful();
 
-    expect(Shop::query()->sole()->only(['name', 'timezone']))->toBe(['name' => 'Corner Shop', 'timezone' => 'Asia/Dubai'])
+    expect(Shop::query()->sole()->only(['name', 'timezone']))->toBe(['name' => 'Corner Shop', 'timezone' => ShopTimezone::AsiaKarachi])
         ->and(User::query()->where('email', 'owner@shop.local')->exists())->toBeTrue();
 });
 
@@ -140,7 +141,8 @@ test('it rejects invalid input without creating anything', function (string $own
     'mismatched confirmation' => ['owner@shop.local', OWNER_PASSWORD, 'Different-Pass-1', null, 'confirmation does not match'],
     'login already used' => ['taken@shop.local', OWNER_PASSWORD, OWNER_PASSWORD, null, 'already been taken'],
     'not an email' => ['owner', OWNER_PASSWORD, OWNER_PASSWORD, null, 'valid email address'],
-    'unknown timezone' => ['owner@shop.local', OWNER_PASSWORD, OWNER_PASSWORD, 'Mars/Olympus', 'valid timezone'],
+    'unknown timezone' => ['owner@shop.local', OWNER_PASSWORD, OWNER_PASSWORD, 'Mars/Olympus', 'must be one of: Asia/Karachi'],
+    'real but unsupported timezone' => ['owner@shop.local', OWNER_PASSWORD, OWNER_PASSWORD, 'Asia/Dubai', 'must be one of: Asia/Karachi'],
 ]);
 
 test('it locks demo accounts that still use published passwords without deleting them', function (): void {

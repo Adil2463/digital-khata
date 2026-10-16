@@ -1,9 +1,10 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../wayfinder'
 import settings from './settings'
 import admin from './admin'
+import shop from './shop'
 /**
 * @see \App\Modules\Dashboard\Http\Controllers\DashboardController::__invoke
-* @see app/Modules/Dashboard/Http/Controllers/DashboardController.php:13
+* @see app/Modules/Dashboard/Http/Controllers/DashboardController.php:17
 * @route '/app/dashboard'
 */
 export const dashboard = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -18,7 +19,7 @@ dashboard.definition = {
 
 /**
 * @see \App\Modules\Dashboard\Http\Controllers\DashboardController::__invoke
-* @see app/Modules/Dashboard/Http/Controllers/DashboardController.php:13
+* @see app/Modules/Dashboard/Http/Controllers/DashboardController.php:17
 * @route '/app/dashboard'
 */
 dashboard.url = (options?: RouteQueryOptions) => {
@@ -27,7 +28,7 @@ dashboard.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Modules\Dashboard\Http\Controllers\DashboardController::__invoke
-* @see app/Modules/Dashboard/Http/Controllers/DashboardController.php:13
+* @see app/Modules/Dashboard/Http/Controllers/DashboardController.php:17
 * @route '/app/dashboard'
 */
 dashboard.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -37,7 +38,7 @@ dashboard.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Modules\Dashboard\Http\Controllers\DashboardController::__invoke
-* @see app/Modules/Dashboard/Http/Controllers/DashboardController.php:13
+* @see app/Modules/Dashboard/Http/Controllers/DashboardController.php:17
 * @route '/app/dashboard'
 */
 dashboard.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -49,6 +50,7 @@ const app = {
     dashboard: Object.assign(dashboard, dashboard),
     settings: Object.assign(settings, settings),
     admin: Object.assign(admin, admin),
+    shop: Object.assign(shop, shop),
 }
 
 export default app

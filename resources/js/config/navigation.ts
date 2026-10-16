@@ -5,6 +5,7 @@ import IconLucideLayoutGrid from '~icons/lucide/layout-grid'
 import IconLucideLockKeyhole from '~icons/lucide/lock-keyhole'
 import IconLucideLogIn from '~icons/lucide/log-in'
 import IconLucideSettings from '~icons/lucide/settings'
+import IconLucideStore from '~icons/lucide/store'
 import IconLucideUsers from '~icons/lucide/users'
 import appRoutes from '../routes/app'
 import authRoutes from '../routes/auth'
@@ -25,6 +26,7 @@ const navRoutes = {
     marketingHome: () => marketingRoutes.home.url(),
     appDashboard: () => appRoutes.dashboard.url(),
     adminUsers: () => appRoutes.admin.users.index.url(),
+    shopSettings: () => appRoutes.shop.settings.edit.url(),
     settingsProfile: () => appRoutes.settings.profile.edit.url(),
     settingsPassword: () => appRoutes.settings.password.edit.url(),
     settingsAppearance: () => appRoutes.settings.appearance.url(),
@@ -46,38 +48,56 @@ export const buildSettingsNavItems = (): NavItem[] => [
     }
 ]
 
-export const buildDashboardPrimaryItems = (context: NavigationContext): NavItem[] => {
-    const items: NavItem[] = [
+// Owner-only screens. Hiding them is a convenience: each route is also guarded by its gate.
+const buildOwnerItems = (): NavItem[] => [
+    {
+        title: 'Staff',
+        href: navRoutes.adminUsers(),
+        activeMatch: 'prefix',
+        icon: IconLucideUsers
+    },
+    {
+        title: 'Shop settings',
+        href: navRoutes.shopSettings(),
+        activeMatch: 'prefix',
+        icon: IconLucideStore
+    }
+]
+
+export const buildDashboardNavGroups = (context: NavigationContext): NavigationGroup[] => {
+    const groups: NavigationGroup[] = [
         {
-            title: 'Dashboard',
-            href: navRoutes.appDashboard(),
-            activeMatch: 'prefix',
-            icon: IconLucideLayoutGrid
+            title: 'Menu',
+            items: [
+                {
+                    title: 'Dashboard',
+                    href: navRoutes.appDashboard(),
+                    activeMatch: 'prefix',
+                    icon: IconLucideLayoutGrid
+                },
+                ...resolveDashboardCrudNavigationItems(context.role)
+            ]
         }
     ]
 
     if (context.isAdmin) {
-        items.push({
-            title: 'Staff',
-            href: navRoutes.adminUsers(),
-            activeMatch: 'prefix',
-            icon: IconLucideUsers
+        groups.push({
+            title: 'Manage shop',
+            items: buildOwnerItems()
         })
     }
 
-    items.push(...resolveDashboardCrudNavigationItems(context.role))
-
-    return items
+    return groups
 }
 
 export const buildDashboardFooterItems = (): NavItem[] => [
     {
-        title: 'Settings',
+        title: 'My account',
         href: navRoutes.settingsProfile(),
         icon: IconLucideSettings
     },
     {
-        title: 'Security',
+        title: 'Password',
         href: navRoutes.settingsPassword(),
         icon: IconLucideLockKeyhole
     }
@@ -99,11 +119,7 @@ export const buildMarketingPrimaryItems = (context: NavigationContext): NavItem[
         })
 
         if (context.isAdmin) {
-            items.push({
-                title: 'Staff',
-                href: navRoutes.adminUsers(),
-                activeMatch: 'prefix'
-            })
+            items.push(...buildOwnerItems())
         }
     }
 
@@ -133,7 +149,7 @@ export const buildMarketingSecondaryAction = (context: NavigationContext): NavIt
     }
 
     return {
-        title: 'Settings',
+        title: 'My account',
         href: navRoutes.settingsProfile(),
         icon: IconLucideSettings
     }
@@ -186,14 +202,8 @@ export const buildMarketingFooterGroups = (context: NavigationContext): Navigati
 
     if (context.isAdmin) {
         groups.push({
-            title: 'Administration',
-            items: [
-                {
-                    title: 'Staff management',
-                    href: navRoutes.adminUsers(),
-                    activeMatch: 'prefix'
-                }
-            ]
+            title: 'Manage shop',
+            items: buildOwnerItems()
         })
     }
 

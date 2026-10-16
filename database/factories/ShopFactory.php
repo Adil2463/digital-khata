@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\ShopTimezone;
 use App\Models\Shop;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -21,7 +22,7 @@ final class ShopFactory extends Factory
             'name' => fake()->company(),
             'phone' => null,
             'address' => null,
-            'timezone' => Shop::DEFAULT_TIMEZONE,
+            'timezone' => ShopTimezone::DEFAULT,
             'receipt_footer' => null,
         ];
     }

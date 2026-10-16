@@ -34,7 +34,7 @@
             <div
                 class="mx-auto flex w-full max-w-7xl flex-col gap-1 px-4 py-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8"
             >
-                <p>&copy; {{ currentYear }} Laravel Starter Kit</p>
+                <p>&copy; {{ currentYear }} Digital Khata</p>
                 <p>Built for consistent UX, robust architecture, and faster delivery.</p>
             </div>
         </div>

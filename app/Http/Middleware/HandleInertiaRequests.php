@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Enums\Appearance;
+use App\Models\Shop;
+use App\Models\User;
 use App\Modules\Shared\Data\SharedAuthData;
 use App\Modules\Shared\Data\SharedFlashData;
 use App\Modules\Shared\Data\SharedPageData;
 use App\Modules\Shared\Data\SharedQuoteData;
+use App\Modules\Shared\Data\SharedShopData;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -51,13 +54,16 @@ final class HandleInertiaRequests extends Middleware
         $quoteParts = explode('-', $quoteText, 2);
         $message = $quoteParts[0];
         $author = $quoteParts[1] ?? '';
+        $user = $request->user();
+        $shop = $user instanceof User ? $user->shop : null;
 
         return [
             ...parent::share($request),
             ...new SharedPageData(
                 name: config()->string('app.name'),
                 quote: new SharedQuoteData(mb_trim($message), mb_trim($author)),
-                auth: new SharedAuthData($request->user()?->toViewData()),
+                auth: new SharedAuthData($user?->toViewData()),
+                shop: $shop instanceof Shop ? SharedShopData::fromShop($shop) : null,
                 flash: SharedFlashData::fromSession($request->session()),
                 location: $request->fullUrl(),
                 sidebarOpen: ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

@@ -4,7 +4,8 @@ import type { Component } from 'vue'
 // base-ui consumers keep one import surface.
 export type { ToastVariant } from '@/lib/theme'
 
-export type FormFieldType = 'text' | 'email' | 'password' | 'textarea' | 'select' | 'multiselect' | 'file' | 'checkbox' | 'radio' | 'toggle' | 'tabs'
+export type FormFieldType =
+    'text' | 'email' | 'password' | 'tel' | 'textarea' | 'select' | 'multiselect' | 'file' | 'checkbox' | 'radio' | 'toggle' | 'tabs'
 export type FormValues = Record<string, unknown>
 
 export interface FormOption {

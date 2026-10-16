@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Modules\Shared\Auth\SessionEndNotice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Symfony\Component\HttpFoundation\Cookie;
 
 uses(RefreshDatabase::class);
 
@@ -58,7 +60,36 @@ test('users can logout', function (): void {
     $testResponse = $this->post('/auth/logout');
 
     $this->assertGuest();
-    $testResponse->assertRedirect('/');
-    $this->get('/')->assertViewHas('page.clearHistory', true);
-    $this->get('/')->assertViewMissing('page.clearHistory');
+    $testResponse->assertRedirect('/auth/login');
+    $this->get('/auth/login')
+        ->assertViewHas('page.clearHistory', true)
+        ->assertInertia(fn (Assert $assert): Assert => $assert->where('status', SessionEndNotice::LOGGED_OUT_MESSAGE));
+    $this->get('/auth/login')->assertViewMissing('page.clearHistory');
+});
+
+test('signing in marks the browser and logging out clears the mark', function (): void {
+    $user = User::factory()->create();
+
+    $login = $this->post('/auth/login', ['email' => $user->email, 'password' => 'password']);
+    $marker = collect($login->headers->getCookies())->first(fn (Cookie $cookie): bool => $cookie->getName() === SessionEndNotice::COOKIE);
+
+    expect($marker)->toBeInstanceOf(Cookie::class)
+        ->and($marker?->isHttpOnly())->toBeTrue();
+
+    $logout = $this->post('/auth/logout');
+    $cleared = collect($logout->headers->getCookies())->first(fn (Cookie $cookie): bool => $cookie->getName() === SessionEndNotice::COOKIE);
+
+    expect($cleared?->isCleared())->toBeTrue();
+});
+
+test('a guest returning without logging out is told the session expired, once', function (): void {
+    $response = $this->withCookie(SessionEndNotice::COOKIE, '1')->get('/auth/login');
+
+    $response->assertInertia(fn (Assert $assert): Assert => $assert->where('status', SessionEndNotice::EXPIRED_MESSAGE));
+
+    expect(collect($response->headers->getCookies())->first(fn (Cookie $cookie): bool => $cookie->getName() === SessionEndNotice::COOKIE)?->isCleared())->toBeTrue();
+});
+
+test('a first visit to the login page shows no session message', function (): void {
+    $this->get('/auth/login')->assertInertia(fn (Assert $assert): Assert => $assert->where('status', null));
 });

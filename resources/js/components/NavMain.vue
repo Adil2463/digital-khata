@@ -2,13 +2,14 @@
     import { type NavItem } from '@/types'
 
     defineProps<{
+        title: string
         items: NavItem[]
     }>()
 </script>
 
 <template>
     <UiSidebarGroup class="px-2 py-0">
-        <UiSidebarGroupLabel>Platform</UiSidebarGroupLabel>
+        <UiSidebarGroupLabel>{{ title }}</UiSidebarGroupLabel>
         <UiSidebarMenu>
             <UiSidebarMenuItem v-for="item in items" :key="item.title">
                 <UiSidebarMenuButton as-child :is-active="item.isActive === true" :tooltip="item.title">

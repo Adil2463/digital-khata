@@ -4,7 +4,7 @@ import verification from './verification'
 import password from './password'
 /**
 * @see \App\Modules\Auth\Http\Controllers\AuthenticatedSessionController::logout
-* @see app/Modules/Auth/Http/Controllers/AuthenticatedSessionController.php:49
+* @see app/Modules/Auth/Http/Controllers/AuthenticatedSessionController.php:53
 * @route '/auth/logout'
 */
 export const logout = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -19,7 +19,7 @@ logout.definition = {
 
 /**
 * @see \App\Modules\Auth\Http\Controllers\AuthenticatedSessionController::logout
-* @see app/Modules/Auth/Http/Controllers/AuthenticatedSessionController.php:49
+* @see app/Modules/Auth/Http/Controllers/AuthenticatedSessionController.php:53
 * @route '/auth/logout'
 */
 logout.url = (options?: RouteQueryOptions) => {
@@ -28,7 +28,7 @@ logout.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Modules\Auth\Http\Controllers\AuthenticatedSessionController::logout
-* @see app/Modules/Auth/Http/Controllers/AuthenticatedSessionController.php:49
+* @see app/Modules/Auth/Http/Controllers/AuthenticatedSessionController.php:53
 * @route '/auth/logout'
 */
 logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({

@@ -6,6 +6,7 @@ use App\Http\Middleware\EnsureAccountCanSignIn;
 use App\Models\User;
 use App\Modules\Shared\Auth\CredentialRotator;
 use App\Modules\Shared\Auth\DemoAccounts;
+use App\Modules\Shared\Auth\SessionEndNotice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Auth;
@@ -106,6 +107,32 @@ test('sessions expire after the configured idle time', function (): void {
     $this->get('/app/dashboard')->assertRedirect('/auth/login');
 });
 
+test('the next click after an idle timeout explains why login is needed', function (): void {
+    $this->signInWithPersistedSession(User::factory()->create());
+
+    $this->travel(31)->minutes();
+    $this->forgetRequestState();
+
+    $this->followingRedirects()
+        ->get('/app/dashboard')
+        ->assertInertia(fn (Assert $assert): Assert => $assert
+            ->component('modules/auth/pages/Login')
+            ->where('status', SessionEndNotice::EXPIRED_MESSAGE));
+});
+
+test('a deactivation notice is not replaced by the expiry notice', function (): void {
+    $staff = User::factory()->create();
+    $this->signInWithPersistedSession($staff);
+    $staff->forceFill(['deactivated_at' => now()])->save();
+    $this->forgetRequestState();
+
+    $signedOut = $this->get('/app/dashboard')->assertRedirect('/auth/login');
+    $this->continueWithCookiesFrom($signedOut);
+
+    $this->get('/auth/login')
+        ->assertInertia(fn (Assert $assert): Assert => $assert->where('status', EnsureAccountCanSignIn::DEACTIVATED_MESSAGE));
+});
+
 test('remember me is not offered and never issues a long-lived cookie', function (): void {
     $user = User::factory()->create();
 
@@ -146,7 +173,7 @@ test('an expired page sends guests to login and keeps signed-in users on the for
 
     $this->post('/__test/expired-form')
         ->assertRedirect(route('auth.login.create'))
-        ->assertSessionHas('status', 'Your session expired after a period of inactivity. Please log in again.');
+        ->assertSessionHas('status', SessionEndNotice::EXPIRED_MESSAGE);
 
     $this->actingAs(User::factory()->create())
         ->from('/app/settings/profile')

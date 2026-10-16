@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../wayfinder'
 /**
 * @see \App\Modules\Marketing\Http\Controllers\HomeController::__invoke
-* @see app/Modules/Marketing/Http/Controllers/HomeController.php:13
+* @see app/Modules/Marketing/Http/Controllers/HomeController.php:18
 * @route '/'
 */
 export const home = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ home.definition = {
 
 /**
 * @see \App\Modules\Marketing\Http\Controllers\HomeController::__invoke
-* @see app/Modules/Marketing/Http/Controllers/HomeController.php:13
+* @see app/Modules/Marketing/Http/Controllers/HomeController.php:18
 * @route '/'
 */
 home.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ home.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Modules\Marketing\Http\Controllers\HomeController::__invoke
-* @see app/Modules/Marketing/Http/Controllers/HomeController.php:13
+* @see app/Modules/Marketing/Http/Controllers/HomeController.php:18
 * @route '/'
 */
 home.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ home.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Modules\Marketing\Http\Controllers\HomeController::__invoke
-* @see app/Modules/Marketing/Http/Controllers/HomeController.php:13
+* @see app/Modules/Marketing/Http/Controllers/HomeController.php:18
 * @route '/'
 */
 home.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({

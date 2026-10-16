@@ -7,6 +7,7 @@ namespace App\Modules\Auth\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Auth\Data\LoginPageData;
 use App\Modules\Auth\Http\Requests\LoginRequest;
+use App\Modules\Shared\Auth\SessionEndNotice;
 use App\Modules\Shared\Http\Responders\PageResponder;
 use App\Modules\Shared\Support\SessionHelper;
 use Illuminate\Http\RedirectResponse;
@@ -22,10 +23,12 @@ final class AuthenticatedSessionController extends Controller
      */
     public function create(Request $request): Response
     {
+        $sessionEndNotice = SessionEndNotice::consume($request);
+
         return PageResponder::render(
             'modules/auth/pages/Login',
             new LoginPageData(
-                status: SessionHelper::resolveStatus($request),
+                status: SessionHelper::resolveStatus($request) ?? $sessionEndNotice,
             ),
         );
     }
@@ -39,6 +42,7 @@ final class AuthenticatedSessionController extends Controller
 
         $loginRequest->session()->regenerate();
         Inertia::clearHistory();
+        SessionEndNotice::remember();
 
         return redirect()->intended(route('app.dashboard', absolute: false));
     }
@@ -53,7 +57,9 @@ final class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         Inertia::clearHistory();
+        SessionEndNotice::forget();
 
-        return redirect('/');
+        // Straight to login: an intermediate redirect would consume the one-time history flag.
+        return to_route('auth.login.create')->with('status', SessionEndNotice::LOGGED_OUT_MESSAGE);
     }
 }

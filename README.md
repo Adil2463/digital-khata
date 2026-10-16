@@ -72,8 +72,9 @@ Repeated runs are meant to be cheap, so the aggregate scripts are built for the 
 
 `app/Modules`:
 
-- `Marketing`
+- `Marketing` (root redirect and public page chrome)
 - `Auth`
+- `Shop` (installation and owner-only shop settings)
 - `Dashboard`
 - `Settings`
 - `Users`
@@ -96,8 +97,8 @@ Shared realtime infrastructure:
 
 Pages are in:
 
-- `resources/js/modules/marketing/pages`
 - `resources/js/modules/auth/pages`
+- `resources/js/modules/shop/pages`
 - `resources/js/modules/dashboard/pages`
 - `resources/js/modules/settings/pages`
 - `resources/js/modules/users/pages`
@@ -119,10 +120,11 @@ Canonical frontend presentation contracts:
 
 ### Web
 
-- `GET /` => `marketing.home`
+- `GET /` => `marketing.home` (redirects guests to login and signed-in accounts to the dashboard)
 - `GET /auth/login` => `auth.login.create`
 - `POST /auth/login` => `auth.login.store`
 - `POST /auth/logout` => `auth.logout`
+- `GET|PUT /app/shop/settings` => `app.shop.settings.edit` / `app.shop.settings.update` (owners only)
 - `GET /app/dashboard` => `app.dashboard`
 - `GET /app/settings/profile` => `app.settings.profile.edit`
 - `GET /app/settings/password` => `app.settings.password.edit`
@@ -218,7 +220,7 @@ Includes coverage for:
 - admin users web flow
 - API v1 user endpoints
 - security headers
-- dashboard + marketing rendering
+- dashboard rendering, root redirect, shop settings, and shop business time
 - module discovery and generator behavior
 - strict-types and security architecture rules
 

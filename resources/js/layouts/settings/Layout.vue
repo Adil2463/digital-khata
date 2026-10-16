@@ -4,7 +4,7 @@
 
 <template>
     <div class="px-4 py-6 sm:px-6">
-        <Heading title="Settings" description="Manage your profile and account settings" />
+        <Heading title="My account" description="Your name, login, password, and appearance" />
 
         <div class="flex flex-col gap-8 lg:flex-row lg:gap-12">
             <aside class="w-full lg:w-48">

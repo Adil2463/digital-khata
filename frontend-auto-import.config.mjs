@@ -19,6 +19,7 @@ export const autoImportImports = [
         '@/config/breadcrumbs': [
             'buildDashboardBreadcrumbs',
             'buildUsersBreadcrumbs',
+            'buildShopSettingsBreadcrumbs',
             'buildSettingsProfileBreadcrumbs',
             'buildSettingsPasswordBreadcrumbs',
             'buildSettingsAppearanceBreadcrumbs'
@@ -93,6 +94,7 @@ export const autoImportRestrictedPaths = [
         importNames: [
             'buildDashboardBreadcrumbs',
             'buildUsersBreadcrumbs',
+            'buildShopSettingsBreadcrumbs',
             'buildSettingsProfileBreadcrumbs',
             'buildSettingsPasswordBreadcrumbs',
             'buildSettingsAppearanceBreadcrumbs'

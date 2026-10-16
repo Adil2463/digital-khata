@@ -1,6 +1,6 @@
 # Digital Khata — Database Design
 
-Status: `shops`, `users.shop_id` (Phase 2A), and `users.deactivated_at` (Phase 2B) are **implemented**. Everything else is an approved proposal for its phase. The target is MySQL 8.0.46 (the local server), InnoDB, `utf8mb4_unicode_ci`, strict mode. Migrations use Laravel's schema builder. CHECK constraints the builder cannot express are added with driver-specific `DB::statement` calls.
+Status: `shops`, `users.shop_id` (Phase 2A), and `users.deactivated_at` (Phase 2B) are **implemented**; Phase 2C added no migration. Everything else is an approved proposal for its phase. The target is MySQL 8.0.46 (the local server), InnoDB, `utf8mb4_unicode_ci`, strict mode. Migrations use Laravel's schema builder. CHECK constraints the builder cannot express are added with driver-specific `DB::statement` calls.
 
 Rules referenced as `L…` are defined in [Ledger rules](DIGITAL_KHATA_LEDGER_RULES.md).
 
@@ -32,17 +32,17 @@ shops 1──* backups                      (Phase 9)
 
 Migration `2026_10_16_000001_create_shops_table`.
 
-| Column                     | Type                  | Notes                                                                 |
-| -------------------------- | --------------------- | --------------------------------------------------------------------- |
-| `id`                       | BIGINT UNSIGNED PK    |                                                                       |
-| `name`                     | VARCHAR(120) NOT NULL | Printed on receipts                                                   |
-| `phone`                    | VARCHAR(20) NULL      | Edited on the shop settings page (Phase 2C)                           |
-| `address`                  | VARCHAR(255) NULL     | Edited on the shop settings page (Phase 2C)                           |
-| `timezone`                 | VARCHAR(64) NOT NULL  | Default `Asia/Karachi`; `khata:install` validates it (`timezone:all`) |
-| `receipt_footer`           | VARCHAR(255) NULL     | e.g. "Shukriya!" (Phase 2C)                                           |
-| `created_at`, `updated_at` | TIMESTAMP NULL        |                                                                       |
+| Column                     | Type                  | Notes                                                                |
+| -------------------------- | --------------------- | -------------------------------------------------------------------- |
+| `id`                       | BIGINT UNSIGNED PK    |                                                                      |
+| `name`                     | VARCHAR(120) NOT NULL | Printed on receipts                                                  |
+| `phone`                    | VARCHAR(20) NULL      | Shop Settings (2C ✓): digits, single spaces or dashes, optional `+`  |
+| `address`                  | VARCHAR(255) NULL     | Shop Settings (2C ✓); whitespace collapsed to one line               |
+| `timezone`                 | VARCHAR(64) NOT NULL  | Default `Asia/Karachi`; cast to `ShopTimezone` (only `Asia/Karachi`) |
+| `receipt_footer`           | VARCHAR(255) NULL     | e.g. "Shukriya!"; Shop Settings (2C ✓), printed from Phase 6         |
+| `created_at`, `updated_at` | TIMESTAMP NULL        |                                                                      |
 
-The currency is fixed at PKR and is not stored. `khata:install` refuses to create a second shop.
+The currency is fixed at PKR and is not stored. `khata:install` refuses to create a second shop and accepts only a supported timezone. Shops are never deleted; there is no deletion route. The `timezone` column stays a string so a future timezone needs only a new `ShopTimezone` case, not a migration.
 
 ### `users` — Additions
 
@@ -213,6 +213,7 @@ Every money-changing request is one `DB::transaction(…, attempts: 3)` that fir
 | ----- | -------------------------------------------------------------------------------------- |
 | 2A ✓  | `2026_10_16_000001_create_shops_table`, `2026_10_16_000002_add_shop_id_to_users_table` |
 | 2B ✓  | `2026_10_17_000001_add_deactivated_at_to_users_table`                                  |
+| 2C ✓  | None (existing `shops` columns reused)                                                 |
 | 3     | `create_customers_table`, `create_activity_logs_table`                                 |
 | 4     | `create_ledger_entries_table` (+ CHECKs)                                               |
 | 5     | `create_ledger_entry_items_table` (+ CHECKs)                                           |

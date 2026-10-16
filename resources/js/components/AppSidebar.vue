@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import AppLogo from './AppLogo.vue'
 
-    const { dashboardPrimaryItems, dashboardFooterItems } = useNavigation()
+    const { dashboardNavGroups, dashboardFooterItems } = useNavigation()
     const dashboardHref = appRoutes.dashboard.url()
 </script>
 
@@ -20,7 +20,7 @@
         </UiSidebarHeader>
 
         <UiSidebarContent>
-            <NavMain :items="dashboardPrimaryItems" />
+            <NavMain v-for="group in dashboardNavGroups" :key="group.title" :title="group.title" :items="group.items" />
         </UiSidebarContent>
 
         <UiSidebarFooter>

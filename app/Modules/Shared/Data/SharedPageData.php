@@ -15,6 +15,7 @@ final class SharedPageData extends Data
         public string $name,
         public SharedQuoteData $quote,
         public SharedAuthData $auth,
+        public ?SharedShopData $shop,
         public SharedFlashData $flash,
         public string $location,
         public bool $sidebarOpen,

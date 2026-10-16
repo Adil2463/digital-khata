@@ -5,7 +5,7 @@ import { createApp, createSSRApp, h } from 'vue'
 import AppRoot from './components/AppRoot.vue'
 import { configureRealtime } from './lib/realtime/config'
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel'
+const appName = import.meta.env.VITE_APP_NAME || 'Digital Khata'
 
 // Lets Inertia nonce the style elements it injects in the browser (progress bar,
 // error modal) so they satisfy the CSP set by `App\Http\Middleware\SecurityHeaders`.

@@ -1,5 +1,5 @@
 import type { AppPageProps } from '@/types'
-import { Appearance, UserRole } from '@/types/app-data'
+import { Appearance, ShopTimezone, UserRole } from '@/types/app-data'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useNavigation } from '../useNavigation'
 
@@ -38,7 +38,8 @@ describe('useNavigation', () => {
         expect(settingsByTitle.get('Profile')?.isActive).toBe(false)
         expect(settingsByTitle.get('Password')?.isActive).toBe(true)
         expect(settingsByTitle.get('Appearance')?.isActive).toBe(false)
-        expect(footerByTitle.get('Security')?.isActive).toBe(true)
+        expect(footerByTitle.get('My account')?.isActive).toBe(false)
+        expect(footerByTitle.get('Password')?.isActive).toBe(true)
     })
 
     it('marks parent admin users link active for nested users paths', () => {
@@ -48,8 +49,8 @@ describe('useNavigation', () => {
         })
         usePageMock.mockReturnValue(mockPage)
 
-        const { dashboardPrimaryItems } = useNavigation()
-        const itemsByTitle = new Map(dashboardPrimaryItems.value.map((item) => [item.title, item]))
+        const { dashboardNavGroups } = useNavigation()
+        const itemsByTitle = new Map(dashboardNavGroups.value.flatMap((group) => group.items).map((item) => [item.title, item]))
 
         expect(itemsByTitle.get('Dashboard')?.isActive).toBe(false)
         expect(itemsByTitle.get('Staff')?.isActive).toBe(true)
@@ -62,12 +63,19 @@ describe('useNavigation', () => {
         })
         usePageMock.mockReturnValue(mockPage)
 
-        const { dashboardPrimaryItems, marketingPrimaryItems } = useNavigation()
+        const { dashboardNavGroups, marketingPrimaryItems } = useNavigation()
         const marketingByTitle = new Map(marketingPrimaryItems.value.map((item) => [item.title, item]))
 
         expect(marketingByTitle.get('Home')?.isActive).toBe(false)
         expect(marketingByTitle.get('Dashboard')?.isActive).toBe(true)
-        expect(dashboardPrimaryItems.value.some((item) => item.title === 'Staff')).toBe(false)
+        expect(dashboardNavGroups.value.map((group) => group.title)).toEqual(['Menu'])
+        const staffTitles = dashboardNavGroups.value.flatMap((group) => group.items).map((item) => item.title)
+
+        // Generated CRUD modules may add their own items to the same group.
+        expect(staffTitles[0]).toBe('Dashboard')
+        expect(staffTitles).not.toContain('Staff')
+        expect(staffTitles).not.toContain('Shop settings')
+        expect(marketingPrimaryItems.value.map((item) => item.title)).toEqual(['Home', 'Dashboard'])
     })
 
     it('offers guests only the login action because public registration is disabled', () => {
@@ -91,7 +99,38 @@ describe('useNavigation', () => {
         const { marketingPrimaryAction, marketingSecondaryAction } = useNavigation()
 
         expect(marketingPrimaryAction.value.title).toBe('Open dashboard')
-        expect(marketingSecondaryAction.value?.title).toBe('Settings')
+        expect(marketingSecondaryAction.value?.title).toBe('My account')
+    })
+
+    it('gives owners a manage-shop group with staff and shop settings', () => {
+        mockPage = createMockPage({ url: '/app/shop/settings', role: UserRole.Admin })
+        usePageMock.mockReturnValue(mockPage)
+
+        const { dashboardNavGroups, marketingFooterGroups } = useNavigation()
+        const ownerGroup = dashboardNavGroups.value.find((group) => group.title === 'Manage shop')
+
+        expect(dashboardNavGroups.value.map((group) => group.title)).toEqual(['Menu', 'Manage shop'])
+        expect(ownerGroup?.items.map((item) => [item.title, item.href, item.isActive])).toEqual([
+            ['Staff', '/app/admin/users', false],
+            ['Shop settings', '/app/shop/settings', true]
+        ])
+        expect(marketingFooterGroups.value.find((group) => group.title === 'Manage shop')?.items.map((item) => item.title)).toEqual([
+            'Staff',
+            'Shop settings'
+        ])
+    })
+
+    it('never shows owner screens to staff or guests', () => {
+        for (const role of [UserRole.User, null]) {
+            mockPage = createMockPage({ url: '/app/dashboard', role })
+            usePageMock.mockReturnValue(mockPage)
+
+            const { dashboardNavGroups, marketingPrimaryItems, marketingFooterGroups } = useNavigation()
+            const everyHref = JSON.stringify([dashboardNavGroups.value, marketingPrimaryItems.value, marketingFooterGroups.value])
+
+            expect(everyHref).not.toContain('/app/admin/users')
+            expect(everyHref).not.toContain('/app/shop/settings')
+        }
     })
 })
 
@@ -107,6 +146,7 @@ function createMockPage({ url, role }: { url: string; role: UserRole | null }): 
             auth: {
                 user: role === null ? null : createUser(role)
             },
+            shop: role === null ? null : { name: 'Bismillah Karyana Store', timezone: ShopTimezone.AsiaKarachi },
             flash: { message: null, error: null, status: null },
             location: `http://localhost${url}`,
             sidebarOpen: true,
