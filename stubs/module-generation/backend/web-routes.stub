@@ -1,0 +1,15 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Modules\{{ moduleNamespace }}\Http\Controllers\{{ pagePascalName }}Controller;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('{{ routePrefix }}')
+    ->as('{{ routeNamePrefix }}.')
+{{ middlewareLine }}    ->group(function (): void {
+        Route::get('/', [{{ pagePascalName }}Controller::class, 'index'])->name('index');
+        Route::post('/', [{{ pagePascalName }}Controller::class, 'store'])->name('store');
+        Route::put('/{{ modelRouteParameter }}', [{{ pagePascalName }}Controller::class, 'update'])->name('update');
+        Route::delete('/{{ modelRouteParameter }}', [{{ pagePascalName }}Controller::class, 'destroy'])->name('destroy');
+    });

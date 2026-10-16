@@ -1,0 +1,30 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\{{ moduleNamespace }}\Data;
+
+use App\Models\{{ modelClass }};
+use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
+#[TypeScript]
+final class {{ listItemDataClass }} extends Data
+{
+    public function __construct(
+        public int $id,
+        public string $name,
+        public ?string $created_at,
+        public ?string $updated_at,
+    ) {}
+
+    public static function fromModel({{ modelClass }} ${{ modelVariable }}): self
+    {
+        return new self(
+            id: ${{ modelVariable }}->id,
+            name: ${{ modelVariable }}->name,
+            created_at: ${{ modelVariable }}->created_at?->toISOString(),
+            updated_at: ${{ modelVariable }}->updated_at?->toISOString(),
+        );
+    }
+}

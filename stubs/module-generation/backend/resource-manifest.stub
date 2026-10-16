@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'page' => '{{ pagePascalName }}',
+    'model' => '{{ modelClass }}',
+    'route' => [
+        'profile' => '{{ routeProfile }}',
+        'prefix' => '{{ routePrefix }}',
+        'name_prefix' => '{{ routeNamePrefix }}',
+        'roles' => [{{ routeRoles }}],
+        'middleware' => [{{ routeMiddleware }}],
+    ],
+    'api' => [
+        'enabled' => {{ apiEnabled }},
+        'route_profile' => '{{ apiRouteProfile }}',
+        'route_prefix' => '{{ apiRoutePrefix }}',
+        'route_name_prefix' => '{{ apiRouteNamePrefix }}',
+        'middleware' => [{{ apiMiddleware }}],
+        'generates_resource' => {{ apiGeneratesResource }},
+        'generates_feature_test' => {{ apiGeneratesFeatureTest }},
+    ],
+    'table' => [
+        'columns' => [
+{{ tableColumns }}
+        ],
+        'mobile_fields' => [
+{{ mobileFields }}
+        ],
+    ],
+    'form' => [
+        'fields' => [
+{{ formFields }}
+        ],
+    ],
+    'realtime' => [
+        'enabled' => {{ realtimeEnabled }},
+    ],
+];

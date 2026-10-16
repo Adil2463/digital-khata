@@ -1,0 +1,27 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/pestphp/pest-plugin-phpstan/extension.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
+
+parameters:
+    paths:
+        - app
+        - bootstrap
+        - config
+        - database
+        - public
+        - routes
+        - tests
+        - rector.php
+    level: 9
+    tmpDir: storage/framework/cache/phpstan
+    checkBenevolentUnionTypes: true
+    checkMissingCallableSignature: true
+    checkUninitializedProperties: true
+    reportPossiblyNonexistentConstantArrayOffset: true
+    reportPossiblyNonexistentGeneralArrayOffset: true
+    strictRules:
+        # Laravel's fluent builders and Pest/PHPUnit assertions intentionally expose
+        # instance syntax for methods declared static by their underlying contracts.
+        dynamicCallOnStaticMethod: false

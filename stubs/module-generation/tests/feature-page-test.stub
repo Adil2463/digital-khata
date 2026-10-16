@@ -1,0 +1,26 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Models\User;
+{{ userRoleImportLine }}use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
+
+uses(RefreshDatabase::class);
+
+test('guests access behavior for {{ routeLabel }} page', function (): void {
+    $testResponse = $this->get('{{ routeUri }}');
+
+    {{ guestAssertion }}
+});
+
+{{ forbiddenRoleTest }}test('authenticated users can visit {{ routeLabel }} page', function (): void {
+    $user = User::factory()->create({{ allowedRoleFactoryState }});
+
+    $testResponse = $this->actingAs($user)->get('{{ routeUri }}');
+
+    $testResponse->assertOk();
+    $testResponse->assertInertia(fn (Assert $assert): Assert => $assert
+        ->component('modules/{{ moduleKebab }}/pages/{{ pagePascalName }}')
+    );
+});

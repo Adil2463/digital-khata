@@ -1,0 +1,32 @@
+import { renderToString } from '@vue/server-renderer'
+import { expect, it, vi } from 'vitest'
+import { createSSRApp, h } from 'vue'
+import Page from '@/modules/__PUBLIC_MODULE__/pages/Index.vue'
+
+vi.mock('@inertiajs/vue3', async (importOriginal) => ({
+    ...await importOriginal<typeof import('@inertiajs/vue3')>(),
+    Head: { render: () => null },
+    usePage: () => ({
+        url: '/__PUBLIC_MODULE__',
+        props: {
+            auth: { user: null },
+            location: 'http://localhost/__PUBLIC_MODULE__',
+            sidebarOpen: true,
+            appearance: 'light'
+        }
+    })
+}))
+
+it('server renders a generated public CRUD page for an unauthenticated visitor', async () => {
+    const app = createSSRApp({
+        render: () => h(Page, {
+            items: [],
+            pagination: { current_page: 1, last_page: 1, per_page: 15, total: 0 }
+        })
+    })
+
+    const html = await renderToString(app)
+    expect(html).toContain('Manage records')
+    expect(html).toContain('Create')
+    expect(html).not.toContain('data-slot="sidebar-menu"')
+})

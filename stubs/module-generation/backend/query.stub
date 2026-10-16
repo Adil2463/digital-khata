@@ -1,0 +1,20 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\{{ moduleNamespace }}\Queries;
+
+use App\Models\{{ modelClass }};
+use App\Modules\Shared\Data\PaginationQueryData;
+use Illuminate\Pagination\LengthAwarePaginator;
+
+final class {{ modelClass }}Queries
+{
+    /**
+     * @return LengthAwarePaginator<int, {{ modelClass }}>
+     */
+    public function paginate(PaginationQueryData $paginationQueryData): LengthAwarePaginator
+    {
+        return {{ modelClass }}::query()->latest()->orderByDesc('id')->paginate(perPage: $paginationQueryData->perPage, page: $paginationQueryData->page);
+    }
+}

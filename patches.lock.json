@@ -1,0 +1,27 @@
+{
+    "_hash": "887a53dd06ddbb6ae67a568d6143475c9369a105a7029107c1038032c4f16cf1",
+    "patches": {
+        "laravel/wayfinder": [
+            {
+                "package": "laravel/wayfinder",
+                "description": "Generate identical LF output on Windows and Linux",
+                "url": "patches/wayfinder-portable-newlines.patch",
+                "sha256": "2d6a203a13dd201d0ef7bce5e3189759bfcbbfbf96810fa13eca3c6e9373ab2c",
+                "depth": 1,
+                "extra": {
+                    "provenance": "root"
+                }
+            },
+            {
+                "package": "laravel/wayfinder",
+                "description": "Support Laravel 13 QUERY route helpers",
+                "url": "patches/wayfinder-query-method.patch",
+                "sha256": "65d79731acfd02095e918550dc5da43f288ef50f805869783fc213ba69cbb35f",
+                "depth": 1,
+                "extra": {
+                    "provenance": "root"
+                }
+            }
+        ]
+    }
+}

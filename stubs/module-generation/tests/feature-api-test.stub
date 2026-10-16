@@ -1,0 +1,36 @@
+<?php
+
+declare(strict_types=1);
+
+{{ userRoleImportLine }}use App\Models\{{ modelClass }};
+{{ userModelImportLine }}use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+test('guests access behavior for {{ routeLabel }} api index', function (): void {
+    $testResponse = $this->getJson('{{ apiRouteUri }}');
+
+    {{ apiGuestAssertion }}
+});
+
+{{ forbiddenRoleTest }}test('authenticated users can list {{ routeLabel }} api results', function (): void {
+    {{ apiAuthRequestLine }}
+
+    $testResponse->assertOk();
+
+    {{ modelClass }}::query()->create(['name' => 'Alpha']);
+
+    $testResponse = {{ apiAuthFollowUpLine }};
+
+    $testResponse->assertOk();
+    $testResponse->assertJsonStructure([
+        'data' => [
+            [
+                'id',
+                'name',
+                'created_at',
+                'updated_at',
+            ],
+        ],
+    ]);
+});

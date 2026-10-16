@@ -1,0 +1,170 @@
+@theme inline {
+    /* Defined by `@fonts` from the `laravel()` font config in `vite.config.ts`. */
+    --font-sans: var(--font-instrument-sans);
+
+    --radius-control: var(--theme-radius-control);
+    --radius-panel: var(--theme-radius-panel);
+    --radius-floating: var(--theme-radius-floating);
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --shadow-surface: var(--theme-shadow-surface);
+    --shadow-floating: var(--theme-shadow-floating);
+    --shadow-glass: var(--theme-shadow-glass);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-overlay: var(--overlay);
+    --color-glass: var(--glass);
+    --color-glass-border: var(--glass-border);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --color-sidebar: var(--sidebar-background);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+    --background: hsl(210 40% 98%);
+    --foreground: hsl(222 47% 12%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(222 47% 12%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(222 47% 12%);
+    --primary: hsl(221 83% 53%);
+    --primary-foreground: hsl(210 40% 99%);
+    --secondary: hsl(214 32% 92%);
+    --secondary-foreground: hsl(222 47% 12%);
+    --muted: hsl(214 32% 94%);
+    --muted-foreground: hsl(215 16% 37%);
+    --accent: hsl(204 92% 94%);
+    --accent-foreground: hsl(222 47% 12%);
+    --destructive: hsl(0 74% 53%);
+    --destructive-foreground: hsl(210 40% 99%);
+    --success: hsl(153 60% 36%);
+    --success-foreground: hsl(152 81% 96%);
+    --warning: hsl(35 92% 42%);
+    --warning-foreground: hsl(48 96% 95%);
+    --info: hsl(204 84% 45%);
+    --info-foreground: hsl(204 100% 97%);
+    --border: hsl(214 28% 86%);
+    --input: hsl(214 28% 86%);
+    --ring: hsl(221 83% 53%);
+    --overlay: hsl(222 47% 4% / 0.72);
+    --glass: hsl(210 40% 98% / 0.82);
+    --glass-border: hsl(214 28% 86% / 0.8);
+    --chart-1: hsl(221 83% 53%);
+    --chart-2: hsl(173 75% 35%);
+    --chart-3: hsl(283 64% 49%);
+    --chart-4: hsl(36 90% 55%);
+    --chart-5: hsl(354 78% 55%);
+    --radius: 0.75rem;
+    --theme-radius-control: 0.5rem;
+    --theme-radius-panel: 0.75rem;
+    --theme-radius-floating: 0.625rem;
+    --theme-shadow-surface: 0 1px 2px hsl(222 47% 12% / 0.06), 0 1px 3px hsl(222 47% 12% / 0.04);
+    --theme-shadow-floating: 0 16px 40px -18px hsl(222 47% 12% / 0.28);
+    --theme-shadow-glass: 0 14px 34px -24px hsl(222 47% 12% / 0.42);
+    --marketing-glow-top: radial-gradient(circle at top, hsl(221 83% 53% / 0.16) 0%, transparent 70%);
+    --marketing-glow-bottom: radial-gradient(circle at bottom, var(--muted) 0%, transparent 70%);
+    --sidebar-background: hsl(210 36% 96%);
+    --sidebar-foreground: hsl(222 47% 16%);
+    --sidebar-primary: hsl(221 83% 53%);
+    --sidebar-primary-foreground: hsl(210 40% 98%);
+    --sidebar-accent: hsl(214 28% 90%);
+    --sidebar-accent-foreground: hsl(222 47% 16%);
+    --sidebar-border: hsl(214 25% 84%);
+    --sidebar-ring: hsl(221 83% 53%);
+}
+
+.dark {
+    --background: hsl(224 36% 8%);
+    --foreground: hsl(210 40% 96%);
+    --card: hsl(224 32% 12%);
+    --card-foreground: hsl(210 40% 96%);
+    --popover: hsl(224 32% 12%);
+    --popover-foreground: hsl(210 40% 96%);
+    --primary: hsl(213 94% 68%);
+    --primary-foreground: hsl(222 47% 11%);
+    --secondary: hsl(223 26% 17%);
+    --secondary-foreground: hsl(210 40% 96%);
+    --muted: hsl(223 24% 15%);
+    --muted-foreground: hsl(217 16% 69%);
+    --accent: hsl(221 30% 22%);
+    --accent-foreground: hsl(210 40% 96%);
+    --destructive: hsl(0 71% 60%);
+    --destructive-foreground: hsl(210 40% 98%);
+    --success: hsl(154 61% 52%);
+    --success-foreground: hsl(155 77% 10%);
+    --warning: hsl(43 96% 56%);
+    --warning-foreground: hsl(26 83% 14%);
+    --info: hsl(199 89% 58%);
+    --info-foreground: hsl(202 80% 12%);
+    --border: hsl(223 22% 22%);
+    --input: hsl(223 22% 22%);
+    --ring: hsl(213 94% 68%);
+    --overlay: hsl(224 44% 3% / 0.8);
+    --glass: hsl(224 36% 8% / 0.82);
+    --glass-border: hsl(223 22% 23% / 0.82);
+    --chart-1: hsl(213 94% 68%);
+    --chart-2: hsl(170 60% 45%);
+    --chart-3: hsl(286 75% 68%);
+    --chart-4: hsl(36 90% 60%);
+    --chart-5: hsl(350 86% 64%);
+    --theme-shadow-surface: 0 1px 2px hsl(224 44% 3% / 0.28), 0 1px 3px hsl(224 44% 3% / 0.2);
+    --theme-shadow-floating: 0 18px 48px -20px hsl(224 44% 3% / 0.78);
+    --theme-shadow-glass: 0 14px 34px -24px hsl(224 44% 3% / 0.8);
+    --marketing-glow-top: radial-gradient(circle at top, hsl(213 94% 68% / 0.15) 0%, transparent 70%);
+    --marketing-glow-bottom: radial-gradient(circle at bottom, var(--muted) 0%, transparent 70%);
+    --sidebar-background: hsl(224 30% 11%);
+    --sidebar-foreground: hsl(210 40% 95%);
+    --sidebar-primary: hsl(213 94% 68%);
+    --sidebar-primary-foreground: hsl(222 47% 11%);
+    --sidebar-accent: hsl(223 25% 18%);
+    --sidebar-accent-foreground: hsl(210 40% 95%);
+    --sidebar-border: hsl(223 22% 23%);
+    --sidebar-ring: hsl(213 94% 68%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

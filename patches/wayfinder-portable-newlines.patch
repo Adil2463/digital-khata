@@ -1,0 +1,105 @@
+--- a/src/GenerateCommand.php
++++ b/src/GenerateCommand.php
+@@ -139,14 +139,14 @@
+         foreach ($this->content as $path => $content) {
+             $this->files->ensureDirectoryExists(dirname($path));
+
+-            $body = TypeScript::cleanUp(implode(PHP_EOL, $content));
++            $body = TypeScript::cleanUp(implode("\n", $content));
+
+             if (isset($this->imports[$path])) {
+                 $importLines = collect($this->imports[$path])
+                     ->map(fn ($imports, $key) => 'import { '.implode(', ', array_unique($imports))." } from '{$key}'")
+-                    ->implode(PHP_EOL);
+-
+-                $body = $importLines.PHP_EOL.$body;
++                    ->implode("\n");
++
++                $body = $importLines."\n".$body;
+             }
+
+             $this->writeContentIfChanged($path, $body);
+@@ -162,6 +162,8 @@
+
+     private function writeContentIfChanged(string $path, string $content): void
+     {
++        $content = str_replace(["\r\n", "\r"], "\n", $content);
++
+         $this->files->ensureDirectoryExists(dirname($path));
+
+         if (! $this->files->exists($path) || $this->files->get($path) !== $content) {
+@@ -230,7 +232,7 @@
+             $methodProps .= $exportedMethods->unique()->implode(', ');
+             $methodProps .= ' }';
+         } else {
+-            $methodProps = $methods->map(fn (Route $route) => $defaultExport.'.'.$route->jsMethod().' = '.$route->jsMethod())->unique()->implode(PHP_EOL);
++            $methodProps = $methods->map(fn (Route $route) => $defaultExport.'.'.$route->jsMethod().' = '.$route->jsMethod())->unique()->implode("\n");
+         }
+
+         $this->appendContent($path, <<<JAVASCRIPT
+@@ -391,16 +393,16 @@
+         });
+
+         if (! ($this->content[$indexPath] ?? false)) {
+-            $imports = $childKeys->filter(fn ($_, $key) => $key !== 'index')->map(fn ($alias, $key) => "import {$alias['safe']} from './{$key}'")->implode(PHP_EOL);
++            $imports = $childKeys->filter(fn ($_, $key) => $key !== 'index')->map(fn ($alias, $key) => "import {$alias['safe']} from './{$key}'")->implode("\n");
+         } else {
+-            $imports = $childKeys->only($keysWithGrandkids->keys())->map(fn ($alias, $key) => "import {$alias['safe']} from './{$key}'")->implode(PHP_EOL);
++            $imports = $childKeys->only($keysWithGrandkids->keys())->map(fn ($alias, $key) => "import {$alias['safe']} from './{$key}'")->implode("\n");
+         }
+
+         if ($imports) {
+             $this->prependContent($indexPath, $imports);
+         }
+
+-        $keys = $childKeys->map(fn ($alias, $key) => str_repeat(' ', 4).implode(': ', array_unique([$alias['normalized'], $alias['safeAssign'] ?? $alias['safe']])))->implode(', '.PHP_EOL);
++        $keys = $childKeys->map(fn ($alias, $key) => str_repeat(' ', 4).implode(': ', array_unique([$alias['normalized'], $alias['safeAssign'] ?? $alias['safe']])))->implode(", \n");
+
+         $varExport = TypeScript::safeMethod(Str::afterLast($parent, DIRECTORY_SEPARATOR), 'Method');
+         $existingVars = $childKeys
+--- a/src/TypeScript.php
++++ b/src/TypeScript.php
+@@ -99,19 +99,19 @@
+             ' )' => ')',
+             '( ' => '(',
+             '( ' => '(',
+-            PHP_EOL.' +' => ' +',
+-            '})'.PHP_EOL.'/**' => '})'.PHP_EOL.PHP_EOL.'/**',
+-            '}'.PHP_EOL.'/**' => '}'.PHP_EOL.PHP_EOL.'/**',
++            "\n +" => ' +',
++            "})\n/**" => "})\n\n/**",
++            "}\n/**" => "}\n\n/**",
+         ];
+
+         $regexReplacements = [
+-            '/\=\> \{\n{2,}/' => '=> {'.PHP_EOL,
+-            '/\\s+\.replace/' => sprintf('%s%s.replace', PHP_EOL, str_repeat(' ', 12)),
++            '/\=\> \{\n{2,}/' => "=> {\n",
++            '/\\s+\.replace/' => sprintf('%s%s.replace', "\n", str_repeat(' ', 12)),
+             '/\s+\+ queryParams\(options\)/' => ' + queryParams(options)',
+             '/\n{3,}/' => "\n\n",
+         ];
+
+-        return str($view)
++        return str(str_replace(["\r\n", "\r"], "\n", $view))
+             ->pipe(function (Stringable $str) {
+                 // Clean up function arguments
+                 $matches = $str->matchAll('/ = \(([^)]+\))/')
+@@ -131,7 +131,7 @@
+                 $depth = 0;
+
+                 return str(
+-                    $str->explode(PHP_EOL)
++                    $str->explode("\n")
+                         ->map(fn ($s) => trim($s))
+                         ->map(function ($s) use (&$depth) {
+                             if ($s === '') {
+@@ -150,7 +150,7 @@
+
+                             return $line;
+                         })
+-                        ->implode(PHP_EOL)
++                        ->implode("\n")
+                 );
+             })
+             ->replaceMatches(array_keys($regexReplacements), array_values($regexReplacements))

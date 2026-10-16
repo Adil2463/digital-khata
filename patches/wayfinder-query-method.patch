@@ -1,0 +1,6 @@
+--- a/resources/js/wayfinder.ts
++++ b/resources/js/wayfinder.ts
+@@ -12,2 +12,2 @@
+-type Method = "get" | "post" | "put" | "delete" | "patch" | "head" | "options";
++type Method = "get" | "post" | "put" | "delete" | "patch" | "head" | "options" | "query";
+ type UrlDefaults = Record<string, unknown>;

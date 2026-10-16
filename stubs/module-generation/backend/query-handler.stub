@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\{{ moduleNamespace }}\Handlers;
+
+use App\Models\{{ modelClass }};
+use App\Modules\{{ moduleNamespace }}\Queries\{{ modelClass }}Queries;
+use App\Modules\Shared\Data\PaginationQueryData;
+use Illuminate\Pagination\LengthAwarePaginator;
+
+final readonly class {{ modelClass }}QueryHandler
+{
+    public function __construct(
+        private {{ modelClass }}Queries ${{ modelVariable }}Queries,
+    ) {}
+
+    /**
+     * @return LengthAwarePaginator<int, {{ modelClass }}>
+     */
+    public function index(PaginationQueryData $paginationQueryData): LengthAwarePaginator
+    {
+        return $this->{{ modelVariable }}Queries->paginate($paginationQueryData);
+    }
+}

@@ -1,0 +1,15 @@
+import type { DashboardCrudNavigationContract } from '@/config/dashboard-crud-navigation'
+{{ dashboardNavRoleImportLine }}import IconLucideShapes from '~icons/lucide/shapes'
+
+const dashboardNavigation: DashboardCrudNavigationContract = {
+    key: '{{ moduleKebab }}',
+    item: {
+        title: '{{ moduleNavigationTitle }}',
+        href: {{ dashboardNavHrefExpression }},
+        activeMatch: 'prefix',
+        icon: IconLucideShapes
+    },
+    roles: {{ dashboardNavRoles }}
+}
+
+export default dashboardNavigation

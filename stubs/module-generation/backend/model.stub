@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use App\Modules\{{ moduleNamespace }}\Data\{{ storeDataClass }};
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+final class {{ modelClass }} extends Model
+{
+    /** @use HasFactory<Factory<self>> */
+    use HasFactory;
+
+    protected $table = '{{ tableName }}';
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'name',
+    ];
+
+    public static function createFromData({{ storeDataClass }} ${{ storeDataVariable }}): self
+    {
+        /** @var self ${{ modelVariable }} */
+        ${{ modelVariable }} = self::query()->create(${{ storeDataVariable }}->toArray());
+
+        return ${{ modelVariable }};
+    }
+
+    public function updateFromData({{ storeDataClass }} ${{ storeDataVariable }}): bool
+    {
+        return $this->fill(${{ storeDataVariable }}->toArray())->save();
+    }
+}

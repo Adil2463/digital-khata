@@ -1,0 +1,16 @@
+{{ formTypeImports }}
+
+export type {{ pagePascalName }}FormValues = {{ formValuesType }}
+
+export const {{ pageCamelName }}FormContract = defineFormContract<{{ pagePascalName }}FormValues>({
+    defaults: () => ({
+{{ formDefaultValues }}
+    }),
+    fields: () =>
+        defineFormFields<{{ pagePascalName }}FormValues>([
+{{ formFieldDefinitions }}
+        ])
+})
+
+export const create{{ pagePascalName }}FormDefaults = {{ pageCamelName }}FormContract.defaults
+export const build{{ pagePascalName }}FormFields = {{ pageCamelName }}FormContract.fields

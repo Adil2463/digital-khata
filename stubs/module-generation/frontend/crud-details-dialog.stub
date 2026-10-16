@@ -1,0 +1,61 @@
+<script setup lang="ts">
+    import type { {{ pagePascalName }}ListItem } from '../contracts/{{ pageKebabName }}-crud'
+
+    interface Props {
+        open: boolean
+        item: {{ pagePascalName }}ListItem
+    }
+
+    const props = defineProps<Props>()
+
+    const emit = defineEmits<{
+        'update:open': [open: boolean]
+    }>()
+
+    const formatDate = (value: string | null | undefined): string => {
+        if (value === null) {
+            return 'N/A'
+        }
+
+        if (value === undefined) {
+            return 'N/A'
+        }
+
+        return new Date(value).toLocaleString()
+    }
+</script>
+
+<template>
+    <BaseDialog
+        :open="props.open"
+        title="{{ pagePascalName }} Details"
+        description="Record overview"
+        :show-footer="false"
+        :show-cancel="false"
+        max-width-class="sm:max-w-[460px]"
+        @update:open="emit('update:open', $event)"
+    >
+        <dl class="space-y-3 text-sm">
+            <div class="flex items-start justify-between gap-4 border-b pb-2">
+                <dt class="text-muted-foreground">ID</dt>
+                <dd class="font-medium">{{ props.item.id }}</dd>
+            </div>
+            <div class="flex items-start justify-between gap-4 border-b pb-2">
+                <dt class="text-muted-foreground">Name</dt>
+                <dd class="font-medium">{{ props.item.name }}</dd>
+            </div>
+            <div class="flex items-start justify-between gap-4 border-b pb-2">
+                <dt class="text-muted-foreground">Created</dt>
+                <dd>{{ formatDate(props.item.created_at) }}</dd>
+            </div>
+            <div class="flex items-start justify-between gap-4">
+                <dt class="text-muted-foreground">Updated</dt>
+                <dd>{{ formatDate(props.item.updated_at) }}</dd>
+            </div>
+        </dl>
+
+        <div class="mt-6 flex justify-end">
+            <BaseButton label="Close" variant="outline" @click="emit('update:open', false)" />
+        </div>
+    </BaseDialog>
+</template>

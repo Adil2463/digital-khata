@@ -1,0 +1,13 @@
+import { describe, expect, it } from 'vitest'
+
+import { build{{ pagePascalName }}FormFields, create{{ pagePascalName }}FormDefaults } from '../../forms/{{ pageKebabName }}-form-schema'
+
+describe('{{ pagePascalName }} scaffolding', () => {
+    it('builds typed defaults and fields', () => {
+        const defaults = create{{ pagePascalName }}FormDefaults()
+        const fields = build{{ pagePascalName }}FormFields()
+
+        expect(defaults).toEqual({ name: '' })
+        expect(fields[0]?.name).toBe('name')
+    })
+})

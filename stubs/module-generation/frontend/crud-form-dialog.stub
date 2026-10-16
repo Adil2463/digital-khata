@@ -1,0 +1,95 @@
+<script setup lang="ts">
+    import {{ pagePascalName }}Controller from '{{ controllerActionImportPath }}'
+    import type { {{ pagePascalName }}ListItem } from '../contracts/{{ pageKebabName }}-crud'
+    import { build{{ pagePascalName }}FormFields, create{{ pagePascalName }}FormDefaults, type {{ pagePascalName }}FormValues } from '../forms/{{ pageKebabName }}-form-schema'
+
+    type FormMode = 'create' | 'edit'
+
+    interface Props {
+        open: boolean
+        mode: FormMode
+        item?: {{ pagePascalName }}ListItem | null
+    }
+
+    const props = withDefaults(defineProps<Props>(), {
+        item: null
+    })
+
+    const emit = defineEmits<{
+        'update:open': [open: boolean]
+    }>()
+
+    const { form, submit } = useResourceForm<{{ pagePascalName }}FormValues>(create{{ pagePascalName }}FormDefaults())
+
+    const isEditMode = computed(() => props.mode === 'edit')
+    const title = computed(() => (isEditMode.value ? 'Update {{ pagePascalName }}' : 'Create {{ pagePascalName }}'))
+    const submitLabel = computed(() => (isEditMode.value ? 'Save Changes' : 'Create'))
+
+    const fields = computed(() => build{{ pagePascalName }}FormFields())
+
+    watch(
+        () => [props.open, props.mode, props.item?.id],
+        ([open]) => {
+            if (!open) {
+                return
+            }
+
+            if (isEditMode.value && props.item !== null) {
+                form.name = props.item.name
+                form.clearErrors()
+                return
+            }
+
+            form.reset()
+            form.clearErrors()
+        },
+        { immediate: true }
+    )
+
+    const submitForm = (): void => {
+        if (isEditMode.value) {
+            if (props.item === null) {
+                return
+            }
+
+            submit({{ pagePascalName }}Controller.update({ {{ modelVariable }}: props.item.id }), {
+                onSuccess: () => {
+                    emit('update:open', false)
+                }
+            })
+
+            return
+        }
+
+        submit({{ pagePascalName }}Controller.store(), {
+            resetOnSuccess: true,
+            onSuccess: () => {
+                emit('update:open', false)
+            }
+        })
+    }
+</script>
+
+<template>
+    <BaseDialog
+        :open="props.open"
+        :title="title"
+        :description="'Fill out the fields below.'"
+        :show-footer="false"
+        :show-cancel="false"
+        max-width-class="sm:max-w-[480px]"
+        @update:open="emit('update:open', $event)"
+    >
+        <BaseFormsBaseFormRenderer
+            :model="form"
+            :fields="fields"
+            :errors="form.errors"
+            :processing="form.processing"
+            :submit-label="submitLabel"
+            cancel-label="Cancel"
+            :show-cancel="true"
+            @submit="submitForm"
+            @cancel="emit('update:open', false)"
+        />
+    </BaseDialog>
+</template>

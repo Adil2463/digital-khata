@@ -1,0 +1,75 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\{{ moduleNamespace }}\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Models\{{ modelClass }};
+use App\Modules\{{ moduleNamespace }}\Handlers\{{ modelClass }}CommandHandler;
+use App\Modules\{{ moduleNamespace }}\Handlers\{{ modelClass }}QueryHandler;
+use App\Modules\{{ moduleNamespace }}\Http\Requests\{{ pagePascalName }}StoreRequest;
+use App\Modules\{{ moduleNamespace }}\Http\Requests\{{ pagePascalName }}UpdateRequest;
+use App\Modules\Shared\Data\PaginationData;
+use App\Modules\Shared\Http\Requests\PaginationQueryRequest;
+use App\Modules\Shared\Http\Responders\ApiResponder;
+use Illuminate\Http\JsonResponse;
+
+final class {{ pagePascalName }}ApiController extends Controller
+{
+    public function __construct(
+        private readonly {{ modelClass }}QueryHandler ${{ modelVariable }}QueryHandler,
+        private readonly {{ modelClass }}CommandHandler ${{ modelVariable }}CommandHandler,
+    ) {}
+
+    public function index(PaginationQueryRequest $paginationQueryRequest): JsonResponse
+    {
+        $paginator = $this->{{ modelVariable }}QueryHandler->index($paginationQueryRequest->toDto());
+        /** @var list<{{ modelClass }}> $models */
+        $models = $paginator->items();
+
+        return ApiResponder::payload([
+            'data' => array_map(fn ({{ modelClass }} $model): array => $this->serializeModel($model), $models),
+            'meta' => PaginationData::fromPaginator($paginator)->toArray(),
+        ]);
+    }
+
+    public function store({{ pagePascalName }}StoreRequest ${{ pageCamelName }}StoreRequest): JsonResponse
+    {
+        ${{ modelVariable }} = $this->{{ modelVariable }}CommandHandler->create(${{ pageCamelName }}StoreRequest->toDto());
+
+        return ApiResponder::payload(['data' => $this->serializeModel(${{ modelVariable }})], 201);
+    }
+
+    public function show({{ modelClass }} ${{ modelVariable }}): JsonResponse
+    {
+        return ApiResponder::payload(['data' => $this->serializeModel(${{ modelVariable }})]);
+    }
+
+    public function update({{ pagePascalName }}UpdateRequest ${{ pageCamelName }}UpdateRequest, {{ modelClass }} ${{ modelVariable }}): JsonResponse
+    {
+        $model = $this->{{ modelVariable }}CommandHandler->update(${{ modelVariable }}, ${{ pageCamelName }}UpdateRequest->toDto());
+
+        return ApiResponder::payload(['data' => $this->serializeModel($model)]);
+    }
+
+    public function destroy({{ modelClass }} ${{ modelVariable }}): JsonResponse
+    {
+        $this->{{ modelVariable }}CommandHandler->delete(${{ modelVariable }});
+
+        return ApiResponder::noContent();
+    }
+
+    /**
+     * @return array{id: int, name: string, created_at: string|null, updated_at: string|null}
+     */
+    private function serializeModel({{ modelClass }} $model): array
+    {
+        return [
+            'id' => $model->id,
+            'name' => $model->name,
+            'created_at' => $model->created_at?->toISOString(),
+            'updated_at' => $model->updated_at?->toISOString(),
+        ];
+    }
+}

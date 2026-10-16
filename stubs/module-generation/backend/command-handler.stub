@@ -1,0 +1,31 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\{{ moduleNamespace }}\Handlers;
+
+use App\Models\{{ modelClass }};
+use App\Modules\{{ moduleNamespace }}\Commands\{{ modelClass }}Commands;
+use App\Modules\{{ moduleNamespace }}\Data\{{ storeDataClass }};
+
+final readonly class {{ modelClass }}CommandHandler
+{
+    public function __construct(
+        private {{ modelClass }}Commands ${{ modelVariable }}Commands,
+    ) {}
+
+    public function create({{ storeDataClass }} ${{ storeDataVariable }}): {{ modelClass }}
+    {
+        return $this->{{ modelVariable }}Commands->create(${{ storeDataVariable }});
+    }
+
+    public function update({{ modelClass }} ${{ modelVariable }}, {{ storeDataClass }} ${{ storeDataVariable }}): {{ modelClass }}
+    {
+        return $this->{{ modelVariable }}Commands->update(${{ modelVariable }}, ${{ storeDataVariable }});
+    }
+
+    public function delete({{ modelClass }} ${{ modelVariable }}): void
+    {
+        $this->{{ modelVariable }}Commands->delete(${{ modelVariable }});
+    }
+}

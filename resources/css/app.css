@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+
+@import 'tw-animate-css';
+
+@import './theme.css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    body {
+        @apply bg-background font-sans text-foreground antialiased;
+        text-rendering: optimizeLegibility;
+        font-feature-settings:
+            'rlig' 1,
+            'calt' 1;
+    }
+}

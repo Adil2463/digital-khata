@@ -1,0 +1,67 @@
+<script setup lang="ts">
+    import type { DataTableColumn, DataTableRowAction, MobileCardField } from '@/types/base-ui'
+    import type { {{ pagePascalName }}ListItem } from '../contracts/{{ pageKebabName }}-crud'
+
+    interface Props {
+        items: {{ pagePascalName }}ListItem[]
+    }
+
+    const props = defineProps<Props>()
+
+    const emit = defineEmits<{
+        delete: [item: {{ pagePascalName }}ListItem]
+        edit: [item: {{ pagePascalName }}ListItem]
+        view: [item: {{ pagePascalName }}ListItem]
+    }>()
+
+    const formatDate = (value: string | null | undefined): string => {
+        if (value === null) {
+            return 'N/A'
+        }
+
+        if (value === undefined) {
+            return 'N/A'
+        }
+
+        return new Date(value).toLocaleDateString()
+    }
+
+    const rowKey = (row: {{ pagePascalName }}ListItem): number => row.id
+
+    const columns: Array<DataTableColumn<{{ pagePascalName }}ListItem>> = [
+{{ tableColumnDefinitions }}
+    ]
+
+    const mobileFields: Array<MobileCardField<{{ pagePascalName }}ListItem>> = [
+{{ mobileFieldDefinitions }}
+    ]
+
+    const actions: Array<DataTableRowAction<{{ pagePascalName }}ListItem>> = [
+        {
+            key: 'view',
+            label: 'Details',
+            onClick: (row) => emit('view', row)
+        },
+        {
+            key: 'edit',
+            label: 'Edit',
+            onClick: (row) => emit('edit', row)
+        },
+        {
+            key: 'delete',
+            label: 'Delete',
+            destructive: true,
+            onClick: (row) => emit('delete', row)
+        }
+    ]
+</script>
+
+<template>
+    <BaseTableBaseDataTableMobileCards :rows="props.items" :row-key="rowKey" :fields="mobileFields" :actions="actions">
+        <template #mobile-header="{ row }">
+            <p class="font-medium">{{ row.{{ tablePrimaryFieldKey }} }}</p>
+        </template>
+    </BaseTableBaseDataTableMobileCards>
+
+    <BaseTableBaseDataTable :rows="props.items" :columns="columns" :row-key="rowKey" :actions="actions" empty-message="No records found." />
+</template>

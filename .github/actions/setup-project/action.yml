@@ -1,0 +1,62 @@
+name: Setup Project
+description: Install PHP and Node dependencies with shared caches, then generate backend-owned contracts.
+
+runs:
+  using: composite
+
+  steps:
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        tools: composer:v2
+        coverage: none
+
+    - name: Setup Node
+      uses: actions/setup-node@v7
+      with:
+        node-version: '24'
+        cache: 'npm'
+
+    - name: Validate Dependency Manifests
+      shell: bash
+      run: composer validate --strict
+
+    # Keyed on dependency and patch contracts so a restored vendor directory matches
+    # the committed dependency contract; a lock change simply misses the cache.
+    - name: Cache Composer Packages
+      uses: actions/cache@v6
+      with:
+        path: vendor
+        key: vendor-${{ runner.os }}-${{ hashFiles('composer.lock', 'patches.lock.json', 'patches/**') }}
+
+    # Rector, PHPStan, Prettier, ESLint, and vue-tsc all key their result caches on
+    # file contents, so restoring the previous run's caches only skips work that is
+    # provably unchanged. The rolling restore key keeps every run warm.
+    - name: Cache Tooling Results
+      uses: actions/cache@v6
+      with:
+        path: |
+          storage/framework/cache/phpstan
+          storage/framework/cache/rector
+          node_modules/.cache
+        key: tooling-${{ runner.os }}-${{ hashFiles('composer.lock', 'patches.lock.json', 'patches/**', 'package-lock.json') }}-${{ github.sha }}
+        restore-keys: |
+          tooling-${{ runner.os }}-${{ hashFiles('composer.lock', 'patches.lock.json', 'patches/**', 'package-lock.json') }}-
+          tooling-${{ runner.os }}-
+
+    - name: Install Dependencies
+      shell: bash
+      run: |
+        composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
+        npm ci
+
+    - name: Prepare Application Environment
+      shell: bash
+      run: |
+        cp .env.example .env
+        php artisan key:generate
+
+    - name: Generate Contracts
+      shell: bash
+      run: composer generate

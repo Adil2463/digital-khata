@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\{{ moduleNamespace }}\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Models\{{ modelClass }};
+use App\Modules\{{ moduleNamespace }}\Commands\{{ modelClass }}Commands;
+use App\Modules\{{ moduleNamespace }}\Data\{{ pageDataClass }};
+use App\Modules\{{ moduleNamespace }}\Http\Requests\{{ pagePascalName }}StoreRequest;
+use App\Modules\{{ moduleNamespace }}\Http\Requests\{{ pagePascalName }}UpdateRequest;
+use App\Modules\{{ moduleNamespace }}\Queries\{{ modelClass }}Queries;
+use App\Modules\Shared\Http\Requests\PaginationQueryRequest;
+use App\Modules\Shared\Http\Responders\PageResponder;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Response;
+
+final class {{ pagePascalName }}Controller extends Controller
+{
+    public function __construct(
+        private readonly {{ modelClass }}Queries ${{ modelVariable }}Queries,
+        private readonly {{ modelClass }}Commands ${{ modelVariable }}Commands,
+    ) {}
+
+    public function index(PaginationQueryRequest $paginationQueryRequest): Response
+    {
+        $lengthAwarePaginator = $this->{{ modelVariable }}Queries->paginate($paginationQueryRequest->toDto());
+
+        return PageResponder::render(
+            'modules/{{ moduleKebab }}/pages/{{ pagePascalName }}',
+            {{ pageDataClass }}::fromPaginator($lengthAwarePaginator),
+        );
+    }
+
+    public function store({{ pagePascalName }}StoreRequest ${{ pageCamelName }}StoreRequest): RedirectResponse
+    {
+        $this->{{ modelVariable }}Commands->create(${{ pageCamelName }}StoreRequest->toDto());
+
+        return redirect()->route('{{ routeIndexName }}')
+            ->with('message', '{{ pageTitle }} saved successfully');
+    }
+
+    public function update({{ pagePascalName }}UpdateRequest ${{ pageCamelName }}UpdateRequest, {{ modelClass }} ${{ modelVariable }}): RedirectResponse
+    {
+        $this->{{ modelVariable }}Commands->update(${{ modelVariable }}, ${{ pageCamelName }}UpdateRequest->toDto());
+
+        return redirect()->route('{{ routeIndexName }}')
+            ->with('message', '{{ pageTitle }} updated successfully');
+    }
+
+    public function destroy({{ modelClass }} ${{ modelVariable }}): RedirectResponse
+    {
+        $this->{{ modelVariable }}Commands->delete(${{ modelVariable }});
+
+        return redirect()->route('{{ routeIndexName }}')
+            ->with('message', '{{ pageTitle }} deleted successfully');
+    }
+}

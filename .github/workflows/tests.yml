@@ -1,0 +1,60 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Project
+        uses: ./.github/actions/setup-project
+
+      - name: Build Client And SSR Assets
+        run: npm run build:ssr
+
+      - name: Audit Locked Dependencies
+        run: |
+          composer audit --locked
+          npm audit
+
+      - name: Verify Generated Contracts
+        run: |
+          git diff --exit-code -- resources/js/types resources/js/routes resources/js/actions resources/js/wayfinder
+          test -z "$(git ls-files --others --exclude-standard -- resources/js/types resources/js/routes resources/js/actions resources/js/wayfinder)"
+
+      - name: Frontend Tests
+        run: npm run test:unit
+
+      - name: Tests
+        run: composer test
+
+  # Generator tests assert on rendered strings, so only a real generated module proves
+  # the stubs still emit code that compiles, lints, and passes the PHP toolchain. This
+  # runs beside `ci` rather than inside it so the two pipelines overlap.
+  generated-module:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Project
+        uses: ./.github/actions/setup-project
+
+      - name: Verify A Generated Module
+        run: composer qa:generated

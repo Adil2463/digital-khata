@@ -1,0 +1,90 @@
+<script setup lang="ts">
+    import {{ pagePascalName }}Controller from '{{ controllerActionImportPath }}'
+    import IconLucidePlus from '~icons/lucide/plus'
+    import type { {{ pageDataClass }} } from '@/types/app-data'
+    import type { {{ pagePascalName }}ListItem } from '../contracts/{{ pageKebabName }}-crud'
+
+    const theme = appTheme
+
+    const props = defineProps<{{ pageDataClass }}>()
+
+    const { setPage } = useServerDataTable({
+        endpoint: {{ pagePascalName }}Controller.index,
+        initialQuery: () => ({ page: props.pagination.current_page, perPage: props.pagination.per_page })
+    })
+    {{ pageBreadcrumbs }}
+
+    const isFormDialogOpen = ref(false)
+    const isDeleteDialogOpen = ref(false)
+    const isDetailsDialogOpen = ref(false)
+    const selectedItem = ref<{{ pagePascalName }}ListItem | null>(null)
+    const dialogMode = ref<'create' | 'edit'>('create')
+
+    const openCreateDialog = (): void => {
+        dialogMode.value = 'create'
+        selectedItem.value = null
+        isFormDialogOpen.value = true
+    }
+
+    const openEditDialog = (item: {{ pagePascalName }}ListItem): void => {
+        dialogMode.value = 'edit'
+        selectedItem.value = item
+        isFormDialogOpen.value = true
+    }
+
+    const openDeleteDialog = (item: {{ pagePascalName }}ListItem): void => {
+        selectedItem.value = item
+        isDeleteDialogOpen.value = true
+    }
+
+    const openDetailsDialog = (item: {{ pagePascalName }}ListItem): void => {
+        selectedItem.value = item
+        isDetailsDialogOpen.value = true
+    }
+</script>
+
+<template>
+    <Head title="{{ pagePascalName }}" />
+
+    <{{ pageLayout }}{{ pageLayoutAttributes }}>
+        <div class="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-3 sm:p-4">
+            <div class="mt-2 flex flex-col gap-4 sm:mt-4">
+                <div :class="theme.layout.pageHeader">
+                    <Heading :title="'{{ pagePascalName }}'" description="Manage records" />
+                    <BaseButton label="Create" :icon-left="IconLucidePlus" class="w-full sm:w-auto" @click="openCreateDialog" />
+                </div>
+
+                <{{ moduleComponentPrefix }}Table :items="props.items" @view="openDetailsDialog" @edit="openEditDialog" @delete="openDeleteDialog" />
+
+                <BaseTableBaseDataTablePagination
+                    :current-page="props.pagination.current_page"
+                    :total-pages="props.pagination.last_page"
+                    :total-items="props.pagination.total"
+                    :items-per-page="props.pagination.per_page"
+                    @page-change="setPage"
+                />
+
+                <{{ moduleComponentPrefix }}{{ pagePascalName }}FormDialog
+                    :open="isFormDialogOpen"
+                    :mode="dialogMode"
+                    :item="selectedItem"
+                    @update:open="isFormDialogOpen = $event"
+                />
+
+                <{{ moduleComponentPrefix }}{{ pagePascalName }}DeleteDialog
+                    v-if="isDeleteDialogOpen && selectedItem"
+                    :open="isDeleteDialogOpen"
+                    :item="selectedItem"
+                    @update:open="isDeleteDialogOpen = $event"
+                />
+
+                <{{ moduleComponentPrefix }}{{ pagePascalName }}DetailsDialog
+                    v-if="isDetailsDialogOpen && selectedItem"
+                    :open="isDetailsDialogOpen"
+                    :item="selectedItem"
+                    @update:open="isDetailsDialogOpen = $event"
+                />
+            </div>
+        </div>
+    </{{ pageLayout }}>
+</template>

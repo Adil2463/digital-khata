@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\{{ moduleNamespace }}\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Models\{{ modelClass }};
+use App\Modules\{{ moduleNamespace }}\Handlers\{{ modelClass }}CommandHandler;
+use App\Modules\{{ moduleNamespace }}\Handlers\{{ modelClass }}QueryHandler;
+use App\Modules\{{ moduleNamespace }}\Http\Requests\{{ pagePascalName }}StoreRequest;
+use App\Modules\{{ moduleNamespace }}\Http\Requests\{{ pagePascalName }}UpdateRequest;
+use App\Modules\{{ moduleNamespace }}\Http\Resources\{{ pagePascalName }}Resource;
+use App\Modules\Shared\Http\Requests\PaginationQueryRequest;
+use App\Modules\Shared\Http\Responders\ApiResponder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
+final class {{ pagePascalName }}ApiController extends Controller
+{
+    public function __construct(
+        private readonly {{ modelClass }}QueryHandler ${{ modelVariable }}QueryHandler,
+        private readonly {{ modelClass }}CommandHandler ${{ modelVariable }}CommandHandler,
+    ) {}
+
+    public function index(PaginationQueryRequest $paginationQueryRequest): AnonymousResourceCollection
+    {
+        return ApiResponder::collection({{ pagePascalName }}Resource::collection($this->{{ modelVariable }}QueryHandler->index($paginationQueryRequest->toDto())->withQueryString()));
+    }
+
+    public function store({{ pagePascalName }}StoreRequest ${{ pageCamelName }}StoreRequest): JsonResponse
+    {
+        ${{ modelVariable }} = $this->{{ modelVariable }}CommandHandler->create(${{ pageCamelName }}StoreRequest->toDto());
+
+        return ApiResponder::resource({{ pagePascalName }}Resource::make(${{ modelVariable }}), 201);
+    }
+
+    public function show({{ modelClass }} ${{ modelVariable }}): JsonResponse
+    {
+        return ApiResponder::resource({{ pagePascalName }}Resource::make(${{ modelVariable }}));
+    }
+
+    public function update({{ pagePascalName }}UpdateRequest ${{ pageCamelName }}UpdateRequest, {{ modelClass }} ${{ modelVariable }}): JsonResponse
+    {
+        $model = $this->{{ modelVariable }}CommandHandler->update(${{ modelVariable }}, ${{ pageCamelName }}UpdateRequest->toDto());
+
+        return ApiResponder::resource({{ pagePascalName }}Resource::make($model));
+    }
+
+    public function destroy({{ modelClass }} ${{ modelVariable }}): JsonResponse
+    {
+        $this->{{ modelVariable }}CommandHandler->delete(${{ modelVariable }});
+
+        return ApiResponder::noContent();
+    }
+}

@@ -1,0 +1,190 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "awaisjameel/laravel-starter-kit",
+    "type": "project",
+    "description": "The skeleton application for the Laravel framework focused on security and type safety.",
+    "keywords": [
+        "Laravel Starter kit",
+        "Security and Type safety"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^8.4",
+        "cweagans/composer-patches": "^2.0",
+        "inertiajs/inertia-laravel": "^3.5.1",
+        "laravel/framework": "^13.36.0",
+        "laravel/reverb": "^1.12.0",
+        "laravel/sanctum": "^4.3.3",
+        "laravel/tinker": "^3.0.2",
+        "laravel/wayfinder": "^0.1.21",
+        "nunomaduro/essentials": "^1.2.0",
+        "spatie/laravel-data": "^4.23.0",
+        "spatie/laravel-typescript-transformer": "^3.3.0"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.24.1",
+        "larastan/larastan": "^3.13.0",
+        "laravel/boost": "^2.10.3",
+        "laravel/pail": "^1.2.7",
+        "laravel/pint": "^1.32.1",
+        "laravel/sail": "^1.69.0",
+        "mockery/mockery": "^1.6.15",
+        "nunomaduro/collision": "^8.9.5",
+        "pestphp/pest": "^5.3.2",
+        "pestphp/pest-plugin-laravel": "^5.0.1",
+        "pestphp/pest-plugin-phpstan": "^5.2.2",
+        "phpstan/phpstan": "^2.3.1",
+        "phpstan/phpstan-deprecation-rules": "^2.0.5",
+        "phpstan/phpstan-strict-rules": "^2.1.0",
+        "rector/rector": "^2.7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "setup": [
+            "composer install",
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php artisan key:generate",
+            "@php artisan migrate --force",
+            "npm ci",
+            "npm run build"
+        ],
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi",
+            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
+            "@php artisan migrate --graceful --ansi"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74,#34d399\" \"php artisan serve\" \"php artisan queue:listen --queue=realtime,high,default --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"npm run dev\" \"php artisan reverb:start --host=0.0.0.0 --port=8080 --hostname=127.0.0.1 --no-interaction\" --names=server,queue,logs,vite,reverb --kill-others"
+        ],
+        "dev:ssr": [
+            "npm run build:ssr",
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74,#34d399\" \"php artisan serve\" \"php artisan queue:listen --queue=realtime,high,default --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"php artisan inertia:start-ssr\" \"php artisan reverb:start --host=0.0.0.0 --port=8080 --hostname=127.0.0.1 --no-interaction\" --names=server,queue,logs,ssr,reverb --kill-others"
+        ],
+        "test": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php vendor/bin/pest --parallel"
+        ],
+        "test:serial": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php vendor/bin/pest"
+        ],
+        "test:fast": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php vendor/bin/pest --parallel --tia"
+        ],
+        "format": [
+            "@php vendor/bin/pint"
+        ],
+        "format:check": [
+            "@php vendor/bin/pint --test"
+        ],
+        "refactor": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php vendor/bin/rector process"
+        ],
+        "refactor:check": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php vendor/bin/rector process --dry-run"
+        ],
+        "analyse": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php vendor/bin/phpstan analyse --ansi"
+        ],
+        "cleanup:php": [
+            "@refactor",
+            "@format",
+            "@analyse"
+        ],
+        "cleanup": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#c4b5fd,#93c5fd\" --group --names=php,frontend \"composer cleanup:php\" \"npm run cleanup\""
+        ],
+        "qa:php": [
+            "@refactor:check",
+            "@format:check",
+            "@analyse"
+        ],
+        "qa:generated": [
+            "Composer\\Config::disableProcessTimeout",
+            "bash scripts/verify-generated-module.sh"
+        ],
+        "qa:check": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#c4b5fd,#93c5fd,#fb7185,#34d399\" --group --names=php,format,lint,types \"composer qa:php\" \"npm run format:check\" \"npm run lint:check\" \"npm run typecheck\""
+        ],
+        "generate": [
+            "@php artisan modules:cache --no-interaction",
+            "@php artisan typescript:transform",
+            "@php artisan wayfinder:generate"
+        ],
+        "generate-and-cleanup": [
+            "@generate",
+            "@cleanup"
+        ]
+    },
+    "scripts-descriptions": {
+        "dev": "Start the local development stack (server, queue, logs, Vite, Reverb).",
+        "dev:ssr": "Start the development stack against the production SSR path.",
+        "test": "Run the Pest suite in parallel.",
+        "test:serial": "Run the Pest suite in a single process for debugging output.",
+        "test:fast": "Run the Pest suite in parallel, limited to impacted tests (needs pcov or Xdebug).",
+        "format": "Fix PHP code style with Pint.",
+        "format:check": "Report PHP code style violations without writing files.",
+        "refactor": "Apply Rector refactorings.",
+        "refactor:check": "Report Rector refactorings without writing files.",
+        "analyse": "Run PHPStan static analysis.",
+        "cleanup:php": "Run the mutating PHP pipeline: Rector, Pint, then PHPStan.",
+        "cleanup": "Run the mutating PHP and frontend pipelines in parallel.",
+        "qa:php": "Run the non-mutating PHP checks: Rector dry-run, Pint test, then PHPStan.",
+        "qa:check": "Run every non-mutating PHP and frontend check in parallel.",
+        "generate": "Regenerate backend-owned contracts: module manifest, TypeScript types, Wayfinder helpers.",
+        "generate-and-cleanup": "Regenerate backend-owned contracts, then run the mutating cleanup pipelines.",
+        "qa:generated": "Generate a throwaway module and run it through the full quality gate."
+    },
+    "extra": {
+        "patches": {
+            "laravel/wayfinder": {
+                "Generate identical LF output on Windows and Linux": "patches/wayfinder-portable-newlines.patch",
+                "Support Laravel 13 QUERY route helpers": "patches/wayfinder-query-method.patch"
+            }
+        },
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true,
+            "cweagans/composer-patches": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

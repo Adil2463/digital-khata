@@ -1,0 +1,16 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Modules\{{ moduleNamespace }}\Http\Controllers\{{ pagePascalName }}ApiController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('{{ apiRoutePrefix }}')
+    ->as('{{ apiRouteNamePrefix }}.')
+{{ apiMiddlewareLine }}    ->group(function (): void {
+        Route::get('/', [{{ pagePascalName }}ApiController::class, 'index'])->name('index');
+        Route::post('/', [{{ pagePascalName }}ApiController::class, 'store'])->name('store');
+        Route::get('/{{ modelRouteParameter }}', [{{ pagePascalName }}ApiController::class, 'show'])->name('show');
+        Route::put('/{{ modelRouteParameter }}', [{{ pagePascalName }}ApiController::class, 'update'])->name('update');
+        Route::delete('/{{ modelRouteParameter }}', [{{ pagePascalName }}ApiController::class, 'destroy'])->name('destroy');
+    });
