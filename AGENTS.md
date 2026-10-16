@@ -193,14 +193,15 @@ For every non-trivial change, explicitly verify all affected layers before consi
     - `App\Providers\AuthServiceProvider`
     - `App\Providers\TypeScriptTransformerServiceProvider`
 - Module providers are not added there manually; they are auto-registered during app boot through `App\Modules\Shared\Support\ModuleRegistry::providerClasses(...)`.
-- Web middleware appended in `bootstrap/app.php`:
+- Web middleware appended in `bootstrap/app.php` (the API group appends `EnsureAccountCanSignIn:sanctum`):
+    - `App\Http\Middleware\EnsureAccountCanSignIn`
     - `App\Http\Middleware\HandleAppearance`
     - `App\Http\Middleware\HandleInertiaRequests`
     - `App\Http\Middleware\SecurityHeaders`
     - `Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets`
 - Guest redirects are configured centrally in `bootstrap/app.php` to `route('auth.login.create')`, and authenticated users visiting guest-only routes are redirected to `route('app.dashboard')`. Laravel's own fallback looks for a route named `dashboard` or `home`, which the namespaced route names do not provide.
 - The `verified` middleware alias is configured there with Laravel's `EnsureEmailIsVerified::redirectTo('auth.verification.notice')`. Keep this central default so existing and generated protected routes share the namespaced verification prompt; JSON requests retain Laravel's 403 response.
-- Inertia history encryption defaults to enabled (`INERTIA_ENCRYPT_HISTORY=true`) and requires HTTPS or localhost. Login, logout, and account deletion call `Inertia::clearHistory()` after changing the session so the next page rotates the browser history key. Query-cache clearing does not replace this protection.
+- Inertia history encryption defaults to enabled (`INERTIA_ENCRYPT_HISTORY=true`) and requires HTTPS or localhost. Login and logout call `Inertia::clearHistory()` after changing the session so the next page rotates the browser history key. Query-cache clearing does not replace this protection.
 - `statefulApi()` enables Sanctum session authentication and CSRF protection for API requests from configured first-party origins. Keep `SANCTUM_STATEFUL_DOMAINS` aligned with deployed frontend hosts, including ports. External clients use bearer tokens. Authentication regressions must exercise persisted cookies or real tokens; `actingAs` alone cannot verify middleware wiring.
 - Events are registered from `app/Listeners` and module-discovered listener directories via `ModuleRegistry::listenerDirectories(...)`.
 
@@ -238,7 +239,7 @@ For every non-trivial change, explicitly verify all affected layers before consi
     - `Shop` - Digital Khata shop record and the one-time `khata:install` command
     - `Dashboard` - Authenticated app dashboard
     - `Settings` - User settings (profile, password, appearance)
-    - `Users` - Admin user management with realtime
+    - `Users` - Owner-managed owner and staff accounts (create, edit, deactivate, reactivate) with realtime
     - `Api/V1` - API v1 endpoints
     - `Shared` - Shared infrastructure and utilities
 - Shared domain primitives remain in:
@@ -252,7 +253,12 @@ For every non-trivial change, explicitly verify all affected layers before consi
 
 - Digital Khata is a single-shop installation. There is no public registration and no email-based password reset: no mail is ever delivered. Accounts are created by `php artisan khata:install` (shop + verified owner, once) and by the owner through the Users screen.
 - Passwords are accepted only from hidden interactive prompts in `khata:install` and `khata:user:reset-password`. Both commands refuse `--no-interaction`, never print or log passwords, and validate with `Password::defaults()`.
-- `App\Modules\Shared\Auth\CredentialRotator` is the single place that replaces a password. It also rotates the remember token, deletes Sanctum tokens, and deletes the user's rows when the session driver is `database`. Other session drivers cannot be enumerated per user.
+- `App\Modules\Shared\Auth\CredentialRotator` is the single place that replaces a password or revokes access. `revokeAccess()` rotates the remember token, deletes Sanctum tokens, and deletes the user's rows when the session driver is `database`; an optional kept session id lets users who change their own login or password stay signed in on the current device. Every login change, password change, and deactivation goes through it. Other session drivers cannot be enumerated per user.
+- An account can sign in only when `User::canSignIn()`: it belongs to a shop and `deactivated_at` is null. `LoginRequest` refuses other accounts (the specific message appears only after the password is verified), and `App\Http\Middleware\EnsureAccountCanSignIn` re-checks every authenticated web and API request, logging the session out and throwing `AuthenticationException`. Deactivation therefore takes effect on the next request whatever the session driver.
+- Accounts are never deleted: there is no self-deletion and no admin deletion. Owners deactivate and reactivate accounts of their own shop. `UserPolicy` authorizes (owner, same shop, 404 across shops, no self-deactivation); `UserCommands` enforces invariants under row locks: an owner cannot demote or deactivate themself, and a shop always keeps one active owner.
+- Owner-created and owner-edited accounts are verified (`email_verified_at` set): no email is ever delivered, so the owner vouches instead. Changing an email no longer clears verification.
+- There is no Remember Me. Sessions expire after `SESSION_LIFETIME` idle minutes (default `30`, pinned in `phpunit.xml`). An expired session that submits a form (CSRF 419) is redirected to login with a message by the handler in `bootstrap/app.php`.
+- `Password::defaults()` is set in `AppServiceProvider` to at least 10 characters with letters and numbers, offline (no `uncompromised()`), and applies to every password form and command.
 - `App\Modules\Shared\Auth\DemoAccounts` owns the starter kit's published demo credentials. The users migration seeds them only when `APP_SEED_USERS=true` (default `false`, pinned `false` in `phpunit.xml`) and never in production. `khata:install` detects accounts still accepting those passwords and, after confirmation, locks them with `CredentialRotator::lock()`; it never deletes them. Declining cancels installation without changes.
 - `users.shop_id` is nullable until `khata:install` attaches every pre-existing account to the new shop; the shop row is `RESTRICT`-protected while users reference it.
 
@@ -327,7 +333,7 @@ For every non-trivial change, explicitly verify all affected layers before consi
     - `UserManagementEvent`
     - listeners under `app/Modules/Users/Listeners/**`
 - Domain events should remain separate from broadcast events.
-- `UserManagementEvent` implements `ShouldDispatchAfterCommit`. Dispatch it after persistence succeeds; rolled-back transactions must not emit audit, notification, or realtime side effects. `UserActionContext` snapshots actor and target models so later changes within the transaction cannot rewrite an earlier event. Deleted-user broadcasts carry `user: null`.
+- `UserManagementEvent` implements `ShouldDispatchAfterCommit`. Dispatch it after persistence succeeds; rolled-back transactions must not emit audit, notification, or realtime side effects. `UserActionContext` snapshots actor and target models so later changes within the transaction cannot rewrite an earlier event. Users realtime actions are `create`, `update`, `deactivate`, and `reactivate`; management notifications go only to active owners of the actor's shop.
 - Listeners translate domain events into realtime broadcasts and notifications.
 - Realtime events should extend `app/Modules/Shared/Realtime/Events/RealtimeEvent`.
 - `RealtimeEvent` currently broadcasts:
@@ -497,7 +503,6 @@ When adding similar behavior, inspect and follow the nearest established referen
 - Settings routes under `/app/settings`:
     - `GET /app/settings/profile` -> `app.settings.profile.edit`
     - `PATCH /app/settings/profile` -> `app.settings.profile.update`
-    - `DELETE /app/settings/profile` -> `app.settings.profile.destroy`
     - `GET /app/settings/password` -> `app.settings.password.edit`
     - `PUT /app/settings/password` -> `app.settings.password.update`
     - `GET /app/settings/appearance` -> `app.settings.appearance`
@@ -508,7 +513,8 @@ When adding similar behavior, inspect and follow the nearest established referen
     - `POST /app/admin/users` -> `app.admin.users.store`
     - `PUT /app/admin/users/{user}` -> `app.admin.users.update`
     - `PATCH /app/admin/users/{user}` -> `app.admin.users.update`
-    - `DELETE /app/admin/users/{user}` -> `app.admin.users.destroy`
+    - `PATCH /app/admin/users/{user}/deactivate` -> `app.admin.users.deactivate`
+    - `PATCH /app/admin/users/{user}/reactivate` -> `app.admin.users.reactivate`
     - middleware: `auth`, `verified`, `can:manage-users`
 
 ### API Routes
@@ -526,7 +532,6 @@ When adding similar behavior, inspect and follow the nearest established referen
     - `GET /api/v1/admin/users` -> `api.v1.admin.users.index`
     - `POST /api/v1/admin/users` -> `api.v1.admin.users.store`
     - `PUT /api/v1/admin/users/{user}` -> `api.v1.admin.users.update`
-    - `DELETE /api/v1/admin/users/{user}` -> `api.v1.admin.users.destroy`
     - middleware: `auth:sanctum`, `can:manage-users`
 
 ### Gates And Policies
@@ -706,7 +711,7 @@ When adding similar behavior, inspect and follow the nearest established referen
 - Enforce authorization through policies, gates, and route middleware.
 - Sensitive auth endpoints must use the `auth-sensitive` rate limiter.
 - Password confirmation and verification notification endpoints use this limiter.
-- The `User` model invalidates email verification whenever its email changes through a model update, covering profile and admin transports. Bulk SQL updates bypass model events and must preserve this invariant explicitly.
+- `POST /auth/login` is limited per login and IP by `LoginRequest` (5 attempts) and per IP by the `login` limiter (20 per minute).
 - `AppServiceProvider` currently defines `auth-sensitive` as `5` requests per minute per IP.
 - Security headers must continue to be set by `App\Http\Middleware\SecurityHeaders`.
 - Current headers include:
@@ -957,7 +962,8 @@ Do not shadow them with manual duplicates.
 - PHPStan runs at level 9 with `phpstan/phpstan-strict-rules` and `phpstan/phpstan-deprecation-rules`, with no baseline or ignored-error escape hatch.
 - The strict rule forbidding dynamic calls to static methods is disabled because Pest/PHPUnit assertions and Laravel fluent builders intentionally expose instance syntax over methods declared static. Keep all other strict rules enabled.
 - Apply `RefreshDatabase` only in files that need database isolation; do not make it global.
-- Reusable backend test setup and fixture behavior belongs under `tests/Support/**`, not in duplicated file-local functions.
+- Reusable backend test setup and fixture behavior belongs under `tests/Support/**`, not in duplicated file-local functions. `InteractsWithConsoleCommands::pendingArtisan()` narrows console tests to `PendingCommand`; `InteractsWithPersistedSessions` signs in through the real login form with a database session for session and middleware regressions.
+- `UserFactory` attaches users to the existing shop (creating one) and offers `owner()`, `deactivated()`, and `withoutShop()` states. `make()` without a database needs `withoutShop()`.
 - Module generator backend test stubs must generate native Pest tests.
 - Every behavior change must include tests for:
     - happy path

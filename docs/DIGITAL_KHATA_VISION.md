@@ -1,6 +1,6 @@
 # Digital Khata — Vision And Functional Specification
 
-Status: approved product direction. Phase 2A (shop installation, no public registration, offline password reset) is implemented; every other workflow is planned for the phase named in its heading. Decisions are recorded in the [Roadmap](DIGITAL_KHATA_ROADMAP.md#decision-record).
+Status: approved product direction. Phase 2A (shop installation, no public registration, offline password reset) and Phase 2B (owner-managed staff accounts, deactivation, 30-minute idle timeout) are implemented; every other workflow is planned for the phase named in its heading. Decisions are recorded in the [Roadmap](DIGITAL_KHATA_ROADMAP.md#decision-record).
 Related: [Architecture](DIGITAL_KHATA_ARCHITECTURE.md) · [Database](DIGITAL_KHATA_DATABASE.md) · [Ledger rules](DIGITAL_KHATA_LEDGER_RULES.md) · [Roadmap](DIGITAL_KHATA_ROADMAP.md) · [Manual QA](DIGITAL_KHATA_MANUAL_QA.md)
 
 ## 1. Problem

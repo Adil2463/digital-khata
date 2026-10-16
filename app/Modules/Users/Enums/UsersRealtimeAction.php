@@ -11,5 +11,6 @@ enum UsersRealtimeAction: string
 {
     case Create = 'create';
     case Update = 'update';
-    case Delete = 'delete';
+    case Deactivate = 'deactivate';
+    case Reactivate = 'reactivate';
 }

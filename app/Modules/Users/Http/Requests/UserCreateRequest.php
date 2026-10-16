@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Models\User;
 use App\Modules\Shared\Http\Requests\DataFormRequest;
 use App\Modules\Users\Data\CreateUserData;
+use App\Modules\Users\Http\Requests\Concerns\PreparesAccountInput;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Rules\Password;
@@ -17,6 +18,8 @@ use Illuminate\Validation\Rules\Password;
  */
 final class UserCreateRequest extends DataFormRequest
 {
+    use PreparesAccountInput;
+
     public function authorize(): bool
     {
         return $this->user()?->can('create', User::class) ?? false;
@@ -29,8 +32,8 @@ final class UserCreateRequest extends DataFormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', Password::defaults()],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class.',email'],
+            'password' => ['required', 'string', 'confirmed', Password::defaults()],
             'role' => ['required', 'string', new Enum(UserRole::class)],
         ];
     }

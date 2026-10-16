@@ -48,6 +48,7 @@ declare global {
   const h: typeof import('vue').h
   const inject: typeof import('vue').inject
   const invalidateApiQueryCache: typeof import('../composables/useApiQuery').invalidateApiQueryCache
+  const isAccountDeactivated: typeof import('../modules/users/helpers/account-labels').isAccountDeactivated
   const isObjectRecord: typeof import('../lib/utils').isObjectRecord
   const isProxy: typeof import('vue').isProxy
   const isReactive: typeof import('vue').isReactive
@@ -126,6 +127,8 @@ declare global {
   const useSlots: typeof import('vue').useSlots
   const useTemplateRef: typeof import('vue').useTemplateRef
   const useToast: typeof import('../composables/useToast').useToast
+  const userRoleLabel: typeof import('../modules/users/helpers/account-labels').userRoleLabel
+  const userRoleOptions: typeof import('../modules/users/helpers/account-labels').userRoleOptions
   const watch: typeof import('vue').watch
   const watchEffect: typeof import('vue').watchEffect
   const watchPostEffect: typeof import('vue').watchPostEffect
@@ -216,6 +219,7 @@ declare module 'vue' {
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly invalidateApiQueryCache: UnwrapRef<typeof import('../composables/useApiQuery')['invalidateApiQueryCache']>
+    readonly isAccountDeactivated: UnwrapRef<typeof import('../modules/users/helpers/account-labels')['isAccountDeactivated']>
     readonly isObjectRecord: UnwrapRef<typeof import('../lib/utils')['isObjectRecord']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
@@ -294,6 +298,8 @@ declare module 'vue' {
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>
     readonly useToast: UnwrapRef<typeof import('../composables/useToast')['useToast']>
+    readonly userRoleLabel: UnwrapRef<typeof import('../modules/users/helpers/account-labels')['userRoleLabel']>
+    readonly userRoleOptions: UnwrapRef<typeof import('../modules/users/helpers/account-labels')['userRoleOptions']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
     readonly watchEffect: UnwrapRef<typeof import('vue')['watchEffect']>
     readonly watchPostEffect: UnwrapRef<typeof import('vue')['watchPostEffect']>

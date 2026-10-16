@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../
 import profile from './profile'
 import password from './password'
 /**
-* @see app/Modules/Settings/Routes/web.php:24
+* @see app/Modules/Settings/Routes/web.php:23
 * @route '/app/settings/appearance'
 */
 export const appearance = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ appearance.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see app/Modules/Settings/Routes/web.php:24
+* @see app/Modules/Settings/Routes/web.php:23
 * @route '/app/settings/appearance'
 */
 appearance.url = (options?: RouteQueryOptions) => {
@@ -24,7 +24,7 @@ appearance.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see app/Modules/Settings/Routes/web.php:24
+* @see app/Modules/Settings/Routes/web.php:23
 * @route '/app/settings/appearance'
 */
 appearance.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -33,7 +33,7 @@ appearance.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 
 /**
-* @see app/Modules/Settings/Routes/web.php:24
+* @see app/Modules/Settings/Routes/web.php:23
 * @route '/app/settings/appearance'
 */
 appearance.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({

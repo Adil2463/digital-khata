@@ -8,6 +8,7 @@
     interface Props {
         open: boolean
         mode: UserFormMode
+        currentUserId: number
         user?: UserViewData | null
     }
 
@@ -24,10 +25,13 @@
     const { form, submit } = useResourceForm<UserFormValues>(createUserFormDefaults())
 
     const isEditMode = computed(() => props.mode === 'edit')
-    const fields = computed(() => buildUserFormFields(isEditMode.value))
-    const title = computed(() => (isEditMode.value ? 'Edit User' : 'Create User'))
-    const description = computed(() => (isEditMode.value ? "Make changes to the user's information" : 'Add a new user to the system'))
-    const submitLabel = computed(() => (isEditMode.value ? 'Save Changes' : 'Create User'))
+    const isSelf = computed(() => isEditMode.value && props.user?.id === props.currentUserId)
+    const fields = computed(() => buildUserFormFields({ isEdit: isEditMode.value, isSelf: isSelf.value }))
+    const title = computed(() => (isEditMode.value ? 'Edit account' : 'Add staff account'))
+    const description = computed(() =>
+        isEditMode.value ? 'Update the name, login, role, or password.' : 'The new account can log in straight away. It belongs to your shop.'
+    )
+    const submitLabel = computed(() => (isEditMode.value ? 'Save changes' : 'Create account'))
 
     const syncForm = (): void => {
         if (isEditMode.value && props.user !== null) {
@@ -35,6 +39,7 @@
             form.email = props.user.email
             form.role = props.user.role
             form.password = ''
+            form.password_confirmation = ''
             form.clearErrors()
             return
         }
@@ -65,6 +70,9 @@
                 onSuccess: () => {
                     emit('updated')
                     emit('update:open', false)
+                },
+                onFinish: () => {
+                    form.reset('password', 'password_confirmation')
                 }
             })
             return
@@ -75,6 +83,9 @@
             onSuccess: () => {
                 emit('created')
                 emit('update:open', false)
+            },
+            onFinish: () => {
+                form.reset('password', 'password_confirmation')
             }
         })
     }
@@ -88,7 +99,7 @@
         :processing="form.processing"
         :show-footer="false"
         :show-cancel="false"
-        max-width-class="sm:max-w-[425px]"
+        max-width-class="sm:max-w-[460px]"
         @update:open="emit('update:open', $event)"
     >
         <BaseFormsBaseFormRenderer

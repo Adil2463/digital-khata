@@ -6,58 +6,74 @@ export type UserFormValues = FormValuesFromData<
     CreateUserData,
     {
         role: CreateUserData['role'] | ''
+        password_confirmation: string
     }
 >
 
-const roleOptions = getEnumOptions(UserRole).map((role) => ({
-    value: role.value,
-    label: capitalize(role.label)
-}))
+export interface UserFormFieldOptions {
+    isEdit: boolean
+    isSelf: boolean
+}
 
 export const createUserFormDefaults = (): UserFormValues => ({
     name: '',
     email: '',
-    role: '',
-    password: ''
+    role: UserRole.User,
+    password: '',
+    password_confirmation: ''
 })
 
 export const userFormContract = defineFormContract<UserFormValues>({
     defaults: createUserFormDefaults,
-    fields: () => buildUserFormFields(false)
+    fields: () => buildUserFormFields({ isEdit: false, isSelf: false })
 })
 
-export const buildUserFormFields = (isEdit: boolean) =>
+export const buildUserFormFields = ({ isEdit, isSelf }: UserFormFieldOptions) =>
     defineFormFields<UserFormValues>([
         {
             name: 'name',
-            label: 'Name',
+            label: 'Full name',
             type: 'text',
-            placeholder: 'Enter name',
+            placeholder: 'e.g. Ali Raza',
             required: true,
             autocomplete: 'name'
         },
         {
             name: 'email',
-            label: 'Email',
+            label: 'Login',
             type: 'email',
-            placeholder: 'Enter email',
+            placeholder: 'e.g. ali@shop.local',
+            description: isEdit
+                ? 'Changing the login signs this person out on every device.'
+                : 'Used only to log in. No email is ever sent, so any address in this format works.',
             required: true,
-            autocomplete: 'email'
+            autocomplete: 'off'
         },
         {
             name: 'role',
             label: 'Role',
             type: 'select',
             placeholder: 'Select a role',
+            description: isSelf ? 'You cannot change your own role.' : 'Staff can serve customers but cannot manage accounts or shop settings.',
             required: true,
-            options: roleOptions
+            disabled: isSelf,
+            options: userRoleOptions
         },
         {
             name: 'password',
-            label: 'Password',
+            label: isEdit ? 'New password' : 'Password',
             type: 'password',
-            placeholder: isEdit ? 'Leave empty to keep current password' : 'Enter password',
+            placeholder: isEdit ? 'Leave blank to keep the current password' : 'At least 10 characters with letters and numbers',
+            ...(isEdit ? { description: 'Setting a new password signs this person out on every device.' } : {}),
             required: !isEdit,
-            autocomplete: isEdit ? 'new-password' : 'current-password'
+            autocomplete: 'new-password'
+        },
+        {
+            name: 'password_confirmation',
+            label: isEdit ? 'Confirm new password' : 'Confirm password',
+            type: 'password',
+            placeholder: 'Type the password again',
+            required: !isEdit,
+            autocomplete: 'new-password'
         }
     ])

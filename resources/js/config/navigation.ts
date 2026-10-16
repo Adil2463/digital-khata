@@ -58,7 +58,7 @@ export const buildDashboardPrimaryItems = (context: NavigationContext): NavItem[
 
     if (context.isAdmin) {
         items.push({
-            title: 'Users',
+            title: 'Staff',
             href: navRoutes.adminUsers(),
             activeMatch: 'prefix',
             icon: IconLucideUsers
@@ -100,7 +100,7 @@ export const buildMarketingPrimaryItems = (context: NavigationContext): NavItem[
 
         if (context.isAdmin) {
             items.push({
-                title: 'Users',
+                title: 'Staff',
                 href: navRoutes.adminUsers(),
                 activeMatch: 'prefix'
             })
@@ -189,7 +189,7 @@ export const buildMarketingFooterGroups = (context: NavigationContext): Navigati
             title: 'Administration',
             items: [
                 {
-                    title: 'User management',
+                    title: 'Staff management',
                     href: navRoutes.adminUsers(),
                     activeMatch: 'prefix'
                 }

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\UserRole;
+use App\Models\Shop;
 use App\Models\User;
 use App\Modules\Users\Enums\UsersRealtimeChannel;
 use App\Modules\Users\Events\Broadcast\UserChanged;
@@ -18,8 +19,8 @@ test('creating a user dispatches realtime events and notifications', function ()
     Event::fake([UsersListChanged::class, UserChanged::class]);
     Notification::fake();
 
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $otherAdmin = User::factory()->create(['role' => UserRole::Admin]);
+    $admin = User::factory()->owner()->create();
+    $otherAdmin = User::factory()->owner()->create();
 
     $this->actingAs($admin)
         ->withHeader('X-Socket-ID', '1234.5678')
@@ -27,6 +28,7 @@ test('creating a user dispatches realtime events and notifications', function ()
             'name' => 'Realtime User',
             'email' => 'realtime-user@example.com',
             'password' => 'Password123!@#',
+            'password_confirmation' => 'Password123!@#',
             'role' => UserRole::User->value,
         ])
         ->assertRedirect('/app/admin/users');
@@ -57,7 +59,7 @@ test('creating a user dispatches realtime events and notifications', function ()
 test('updating a user dispatches realtime events', function (): void {
     Event::fake([UsersListChanged::class, UserChanged::class]);
 
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
+    $admin = User::factory()->owner()->create();
     $target = User::factory()->create(['role' => UserRole::User]);
 
     $this->actingAs($admin)
@@ -81,25 +83,41 @@ test('updating a user dispatches realtime events', function (): void {
         return true;
     });
 });
-test('deleting a user dispatches realtime events', function (): void {
+test('deactivating and reactivating a user dispatch realtime events', function (): void {
     Event::fake([UsersListChanged::class, UserChanged::class]);
 
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
+    $admin = User::factory()->owner()->create();
     $target = User::factory()->create(['role' => UserRole::User]);
 
     $this->actingAs($admin)
         ->withHeader('X-Socket-ID', '1234.5678')
-        ->delete('/app/admin/users/'.$target->id)
+        ->patch('/app/admin/users/'.$target->id.'/deactivate')
         ->assertRedirect('/app/admin/users');
 
-    Event::assertDispatched(UsersListChanged::class, static function (UsersListChanged $usersListChanged): true {
-        expect($usersListChanged->broadcastWith())->toMatchArray(['action' => 'delete']);
+    $this->actingAs($admin)
+        ->patch('/app/admin/users/'.$target->id.'/reactivate')
+        ->assertRedirect('/app/admin/users');
 
-        return true;
-    });
-    Event::assertDispatched(UserChanged::class, static function (UserChanged $userChanged): true {
-        expect($userChanged->broadcastWith())->toMatchArray(['action' => 'delete', 'user' => null]);
+    Event::assertDispatched(UsersListChanged::class, static fn (UsersListChanged $usersListChanged): bool => data_get($usersListChanged->broadcastWith(), 'action') === 'deactivate');
+    Event::assertDispatched(UserChanged::class, static fn (UserChanged $userChanged): bool => data_get($userChanged->broadcastWith(), 'action') === 'deactivate'
+        && data_get($userChanged->broadcastWith(), 'user.deactivated_at') !== null);
+    Event::assertDispatched(UserChanged::class, static fn (UserChanged $userChanged): bool => data_get($userChanged->broadcastWith(), 'action') === 'reactivate'
+        && data_get($userChanged->broadcastWith(), 'user.deactivated_at') === null);
+});
 
-        return true;
-    });
+test('management notifications only reach active owners of the same shop', function (): void {
+    Notification::fake();
+
+    $admin = User::factory()->owner()->create();
+    $sameShopOwner = User::factory()->owner()->create();
+    $deactivatedOwner = User::factory()->owner()->deactivated()->create();
+    $staff = User::factory()->create();
+    $otherShopOwner = User::factory()->owner()->create(['shop_id' => Shop::factory()->create()->id]);
+
+    $this->actingAs($admin)
+        ->patch('/app/admin/users/'.$staff->id.'/deactivate')
+        ->assertRedirect('/app/admin/users');
+
+    Notification::assertSentTo($sameShopOwner, UserManagementBroadcastNotification::class);
+    Notification::assertNotSentTo([$admin, $deactivatedOwner, $staff, $otherShopOwner], UserManagementBroadcastNotification::class);
 });

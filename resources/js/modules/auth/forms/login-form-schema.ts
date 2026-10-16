@@ -6,8 +6,7 @@ export type LoginFormValues = FormValuesFromData<LoginData>
 export const loginFormContract = defineFormContract<LoginFormValues>({
     defaults: () => ({
         email: '',
-        password: '',
-        remember: false
+        password: ''
     }),
     fields: () =>
         defineFormFields<LoginFormValues>([
@@ -26,12 +25,6 @@ export const loginFormContract = defineFormContract<LoginFormValues>({
                 required: true,
                 autocomplete: 'current-password',
                 placeholder: 'Password'
-            },
-            {
-                name: 'remember',
-                label: 'Remember me',
-                type: 'checkbox',
-                placeholder: 'Remember me'
             }
         ])
 })

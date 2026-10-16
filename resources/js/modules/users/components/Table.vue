@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import type { UserViewData } from '@/types/app-data'
+    import { UserRole, type UserViewData } from '@/types/app-data'
     import type { DataTableColumn, DataTableRowAction, MobileCardField } from '@/types/base-ui'
     import type { UserSortColumn } from '../contracts/types'
 
@@ -10,13 +10,27 @@
         sortDirection?: 'asc' | 'desc'
     }
 
+    const theme = appTheme
+
     const props = defineProps<Props>()
 
     const emit = defineEmits<{
-        delete: [user: UserViewData]
         edit: [user: UserViewData]
+        changeStatus: [user: UserViewData]
         sort: [column: UserSortColumn]
     }>()
+
+    const statusLabel = (user: UserViewData): string => (isAccountDeactivated(user) ? 'Deactivated' : 'Active')
+    const statusClass = (user: UserViewData): string[] => [
+        theme.feedback.pill,
+        isAccountDeactivated(user) ? theme.feedback.pillTone.muted : theme.feedback.pillTone.success
+    ]
+    const roleClass = (user: UserViewData): string[] => [
+        theme.feedback.pill,
+        user.role === UserRole.Admin ? theme.feedback.pillTone.info : theme.feedback.pillTone.muted
+    ]
+    const roleLabel = (user: UserViewData): string => userRoleLabel(user.role)
+    const isCurrentUser = (user: UserViewData): boolean => user.id === props.currentUserId
 
     const columns: Array<DataTableColumn<UserViewData, UserSortColumn>> = [
         {
@@ -31,19 +45,16 @@
             label: 'Role',
             sortable: true,
             sortKey: 'role',
-            class: 'capitalize',
-            value: (row) => capitalize(row.role)
+            value: (row) => userRoleLabel(row.role)
         },
         {
-            key: 'email',
-            label: 'Email',
-            sortable: true,
-            sortKey: 'email',
-            value: (row) => row.email
+            key: 'status',
+            label: 'Status',
+            value: (row) => statusLabel(row)
         },
         {
             key: 'created_at',
-            label: 'Created At',
+            label: 'Added',
             sortable: true,
             sortKey: 'created_at',
             value: (row) => formatDate(row.created_at)
@@ -54,17 +65,16 @@
         {
             key: 'role',
             label: 'Role',
-            value: (row) => capitalize(row.role)
+            value: (row) => userRoleLabel(row.role)
         },
         {
-            key: 'email',
-            label: 'Email',
-            class: 'break-all',
-            value: (row) => row.email
+            key: 'status',
+            label: 'Status',
+            value: (row) => statusLabel(row)
         },
         {
             key: 'created_at',
-            label: 'Created',
+            label: 'Added',
             value: (row) => formatDate(row.created_at)
         }
     ]
@@ -76,11 +86,17 @@
             onClick: (row) => emit('edit', row)
         },
         {
-            key: 'delete',
-            label: 'Delete',
+            key: 'deactivate',
+            label: 'Deactivate',
             destructive: true,
-            visible: (row) => props.currentUserId !== row.id,
-            onClick: (row) => emit('delete', row)
+            visible: (row) => !isCurrentUser(row) && !isAccountDeactivated(row),
+            onClick: (row) => emit('changeStatus', row)
+        },
+        {
+            key: 'reactivate',
+            label: 'Reactivate',
+            visible: (row) => isAccountDeactivated(row),
+            onClick: (row) => emit('changeStatus', row)
         }
     ])
 
@@ -100,7 +116,7 @@
             columns,
             rowKey: (row) => row.id,
             actions: actions.value,
-            emptyMessage: 'No users found.'
+            emptyMessage: 'No accounts found.'
         }
 
         if (props.sortBy !== undefined) {
@@ -119,7 +135,7 @@
     <BaseTableBaseDataTableMobileCards :rows="props.users" :row-key="(row: UserViewData) => row.id" :fields="mobileFields" :actions="actions">
         <template #mobile-header="slotProps">
             <div class="flex min-w-0 items-center gap-2">
-                <UserInfo :user="resolveSlotRow(slotProps)" />
+                <UserInfo :user="resolveSlotRow(slotProps)" :show-email="true" />
             </div>
         </template>
     </BaseTableBaseDataTableMobileCards>
@@ -127,8 +143,15 @@
     <BaseTableBaseDataTable v-bind="dataTableProps" @sort="emit('sort', $event)">
         <template #cell-name="slotProps">
             <div class="flex min-w-0 items-center gap-2">
-                <UserInfo :user="resolveSlotRow(slotProps)" />
+                <UserInfo :user="resolveSlotRow(slotProps)" :show-email="true" />
+                <span v-if="isCurrentUser(resolveSlotRow(slotProps))" class="text-xs text-muted-foreground">(you)</span>
             </div>
+        </template>
+        <template #cell-role="slotProps">
+            <span :class="roleClass(resolveSlotRow(slotProps))">{{ roleLabel(resolveSlotRow(slotProps)) }}</span>
+        </template>
+        <template #cell-status="slotProps">
+            <span :class="statusClass(resolveSlotRow(slotProps))">{{ statusLabel(resolveSlotRow(slotProps)) }}</span>
         </template>
     </BaseTableBaseDataTable>
 </template>

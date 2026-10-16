@@ -6,20 +6,22 @@ namespace App\Modules\Settings\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Settings\Data\ProfilePageData;
-use App\Modules\Settings\Http\Requests\ProfileDestroyRequest;
 use App\Modules\Settings\Http\Requests\ProfileUpdateRequest;
+use App\Modules\Shared\Auth\CredentialRotator;
 use App\Modules\Shared\Auth\RequestActor;
 use App\Modules\Shared\Http\Responders\PageResponder;
 use App\Modules\Shared\Support\SessionHelper;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Inertia\Inertia;
 use Inertia\Response;
 
 final class ProfileController extends Controller
 {
+    public function __construct(
+        private readonly CredentialRotator $credentialRotator,
+    ) {}
+
     /**
      * Show the user's profile settings page.
      */
@@ -37,7 +39,7 @@ final class ProfileController extends Controller
     }
 
     /**
-     * Update the user's profile information.
+     * A changed login signs the account out on other devices; this session stays.
      */
     public function update(ProfileUpdateRequest $profileUpdateRequest): RedirectResponse
     {
@@ -49,26 +51,14 @@ final class ProfileController extends Controller
             'email' => $profileUpdateData->email,
         ]);
 
+        $loginChanged = $user->isDirty('email');
+
         $user->save();
 
+        if ($loginChanged) {
+            $this->credentialRotator->revokeAccess($user, $profileUpdateRequest->session()->getId());
+        }
+
         return to_route('app.settings.profile.edit');
-    }
-
-    /**
-     * Delete the user's profile.
-     */
-    public function destroy(ProfileDestroyRequest $profileDestroyRequest): RedirectResponse
-    {
-        $user = RequestActor::from($profileDestroyRequest);
-
-        Auth::logout();
-
-        $user->delete();
-
-        $profileDestroyRequest->session()->invalidate();
-        $profileDestroyRequest->session()->regenerateToken();
-        Inertia::clearHistory();
-
-        return redirect('/');
     }
 }

@@ -59,8 +59,6 @@
 
                 <SavedFeedback :show="form.recentlySuccessful" />
             </div>
-
-            <SettingsDeleteUser />
         </SettingsLayout>
     </AppLayout>
 </template>

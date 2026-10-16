@@ -10,7 +10,7 @@ const toSingleBreadcrumb = (title: string, href: string): BreadcrumbItem[] => [
 
 export const buildDashboardBreadcrumbs = (): BreadcrumbItem[] => toSingleBreadcrumb('Dashboard', appRoutes.dashboard.url())
 
-export const buildUsersBreadcrumbs = (): BreadcrumbItem[] => toSingleBreadcrumb('Users', appRoutes.admin.users.index.url())
+export const buildUsersBreadcrumbs = (): BreadcrumbItem[] => toSingleBreadcrumb('Staff', appRoutes.admin.users.index.url())
 
 export const buildSettingsProfileBreadcrumbs = (): BreadcrumbItem[] => toSingleBreadcrumb('Profile settings', appRoutes.settings.profile.edit.url())
 

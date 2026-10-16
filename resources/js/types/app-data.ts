@@ -61,7 +61,6 @@ export type LengthAwarePaginatorInterface<TKey, TValue> = LengthAwarePaginator<T
 export type LoginData = {
     email: string
     password: string
-    remember: boolean
 }
 export type LoginPageData = {
     status: string | null
@@ -86,9 +85,6 @@ export type PresenceMemberData = {
     id: number
     name: string
     role: UserRole
-}
-export type ProfileDestroyData = {
-    password: string
 }
 export type ProfilePageData = {
     mustVerifyEmail: boolean
@@ -173,6 +169,7 @@ export type UserViewData = {
     created_at: string
     updated_at: string
     email_verified_at: string | null
+    deactivated_at: string | null
 }
 export type UsersIndexPageData = {
     items: UserViewData[]
@@ -187,7 +184,8 @@ export type UsersListChangedBroadcastData = {
 export enum UsersRealtimeAction {
     Create = 'create',
     Update = 'update',
-    Delete = 'delete'
+    Deactivate = 'deactivate',
+    Reactivate = 'reactivate'
 }
 export enum UsersRealtimeChannel {
     Index = 'users.index',

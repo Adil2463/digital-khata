@@ -17,7 +17,7 @@
     const breadcrumbs = buildUsersBreadcrumbs()
 
     const isUserDialogOpen = ref(false)
-    const isDeleteDialogOpen = ref(false)
+    const isStatusDialogOpen = ref(false)
     const selectedUser = ref<UserViewData | null>(null)
     const userDialogMode = ref<'create' | 'edit'>('create')
 
@@ -53,12 +53,19 @@
     const { activeCollaboratorCount } = useUsersIndexRealtime({
         currentUserId,
         onListChanged: () => {
-            if (!isUserDialogOpen.value && !isDeleteDialogOpen.value) {
+            if (!isUserDialogOpen.value && !isStatusDialogOpen.value) {
                 router.reload({
                     only: ['items', 'pagination']
                 })
             }
         }
+    })
+
+    const headingDescription = computed(() => {
+        const online = activeCollaboratorCount.value
+        const onlineNote = online > 0 ? ` ${online} owner${online === 1 ? '' : 's'} viewing this page now.` : ''
+
+        return `Owner and staff accounts for your shop. Deactivate an account to stop it logging in; its history is kept.${onlineNote}`
     })
 
     const usersTableProps = computed(() => {
@@ -99,38 +106,35 @@
         isUserDialogOpen.value = false
     }
 
-    const onDeleteUser = (user: UserViewData): void => {
+    const onChangeStatus = (user: UserViewData): void => {
         selectedUser.value = user
-        isDeleteDialogOpen.value = true
+        isStatusDialogOpen.value = true
     }
 
-    const onUserDeleted = (): void => {
-        isDeleteDialogOpen.value = false
+    const onStatusChanged = (): void => {
+        isStatusDialogOpen.value = false
     }
 </script>
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Head title="Users" />
+        <Head title="Staff" />
         <div class="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-3 sm:p-4">
             <div class="mt-2 flex flex-col gap-4 sm:mt-4">
                 <div :class="theme.layout.pageHeader">
-                    <Heading
-                        title="Users"
-                        :description="`Manage user accounts${activeCollaboratorCount > 0 ? ` - ${activeCollaboratorCount} admin${activeCollaboratorCount === 1 ? '' : 's'} online` : ''}`"
-                    />
-                    <BaseButton class="w-full sm:w-auto" label="Add User" :icon-left="IconLucidePlus" @click="openCreateUserDialog" />
+                    <Heading title="Staff" :description="headingDescription" />
+                    <BaseButton class="w-full sm:w-auto" label="Add staff" :icon-left="IconLucidePlus" @click="openCreateUserDialog" />
                 </div>
 
                 <BaseTableBaseDataTableToolbar
                     :search-value="searchValue"
                     :per-page="query.perPage"
-                    search-placeholder="Search users..."
+                    search-placeholder="Search by name, login, owner or staff..."
                     @update:search-value="searchValue = $event"
                     @update:per-page="setPerPage($event)"
                 />
 
-                <UsersTable v-bind="usersTableProps" @edit="onEditUser" @delete="onDeleteUser" @sort="setSort($event)" />
+                <UsersTable v-bind="usersTableProps" @edit="onEditUser" @change-status="onChangeStatus" @sort="setSort($event)" />
 
                 <BaseTableBaseDataTablePagination
                     :current-page="props.pagination.current_page"
@@ -145,18 +149,19 @@
                 v-if="isUserDialogOpen"
                 :open="isUserDialogOpen"
                 :mode="userDialogMode"
+                :current-user-id="currentUserId"
                 :user="selectedUser"
                 @update:open="isUserDialogOpen = $event"
                 @created="onUserSaved"
                 @updated="onUserSaved"
             />
 
-            <UsersDeleteUserDialog
-                v-if="isDeleteDialogOpen && selectedUser"
-                :open="isDeleteDialogOpen"
+            <UsersAccountStatusDialog
+                v-if="isStatusDialogOpen && selectedUser"
+                :open="isStatusDialogOpen"
                 :user="selectedUser"
-                @update:open="isDeleteDialogOpen = $event"
-                @deleted="onUserDeleted"
+                @update:open="isStatusDialogOpen = $event"
+                @changed="onStatusChanged"
             />
         </div>
     </AppLayout>

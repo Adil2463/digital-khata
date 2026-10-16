@@ -29,7 +29,7 @@ php artisan khata:install
 composer dev
 ```
 
-`composer setup` is Laravel's first-run script: it installs the locked Composer and npm dependencies, creates `.env`, generates the application key, runs migrations, and builds the assets. `php artisan khata:install` then creates the shop and its verified owner account; it runs once and asks for the owner password in a hidden prompt. There is no public registration and no email password reset; a forgotten password is reset with `php artisan khata:user:reset-password <email>`. Demo accounts are only created when `APP_SEED_USERS=true` outside production, and `khata:install` locks any that still use their published passwords. `composer dev` serves the app at `http://127.0.0.1:8000`. If you serve it from another host or port, set `APP_URL` to that origin so Sanctum treats first-party API requests as stateful.
+`composer setup` is Laravel's first-run script: it installs the locked Composer and npm dependencies, creates `.env`, generates the application key, runs migrations, and builds the assets. `php artisan khata:install` then creates the shop and its verified owner account; it runs once and asks for the owner password in a hidden prompt. The owner adds staff under Staff in the sidebar; accounts are deactivated rather than deleted, sessions end after 30 idle minutes (`SESSION_LIFETIME`), and passwords need at least 10 characters with letters and numbers. There is no public registration and no email password reset; a forgotten password is reset with `php artisan khata:user:reset-password <email>`. Demo accounts are only created when `APP_SEED_USERS=true` outside production, and `khata:install` locks any that still use their published passwords. `composer dev` serves the app at `http://127.0.0.1:8000`. If you serve it from another host or port, set `APP_URL` to that origin so Sanctum treats first-party API requests as stateful.
 
 Realtime dev dependencies are included in `composer dev`; this starts Laravel Reverb alongside the web server, queue worker, logs, and Vite.
 
@@ -127,7 +127,9 @@ Canonical frontend presentation contracts:
 - `GET /app/settings/profile` => `app.settings.profile.edit`
 - `GET /app/settings/password` => `app.settings.password.edit`
 - `GET /app/settings/appearance` => `app.settings.appearance`
-- `GET /app/admin/users` => `app.admin.users.index`
+- `GET /app/admin/users` => `app.admin.users.index` (owner-only staff management)
+- `PATCH /app/admin/users/{user}/deactivate` => `app.admin.users.deactivate`
+- `PATCH /app/admin/users/{user}/reactivate` => `app.admin.users.reactivate`
 
 ### API v1
 
@@ -137,7 +139,6 @@ First-party browser requests use Sanctum's session and CSRF middleware. Set `SAN
 - `GET /api/v1/admin/users` => `api.v1.admin.users.index`
 - `POST /api/v1/admin/users` => `api.v1.admin.users.store`
 - `PUT /api/v1/admin/users/{user}` => `api.v1.admin.users.update`
-- `DELETE /api/v1/admin/users/{user}` => `api.v1.admin.users.destroy`
 
 ## Type-Safe Data Contracts
 
@@ -194,7 +195,7 @@ paint has to arrive as markup rather than as a side effect of the JS bundle:
 
 User-management side effects dispatch after successful persistence and transaction commit. The client clears cached and mounted account data when identity changes; outstanding mutations skip subsequent callbacks and cache invalidations from the previous account.
 
-Inertia history encryption is enabled by default and its key rotates on login, logout, and account deletion. Serve the app over HTTPS or localhost so the browser's Web Crypto API is available. An existing `INERTIA_ENCRYPT_HISTORY=false` override disables this protection. Unverified users are redirected to the namespaced verification page through the shared `verified` middleware alias.
+Inertia history encryption is enabled by default and its key rotates on login and logout. Serve the app over HTTPS or localhost so the browser's Web Crypto API is available. An existing `INERTIA_ENCRYPT_HISTORY=false` override disables this protection. Unverified users are redirected to the namespaced verification page through the shared `verified` middleware alias.
 
 ## Testing
 

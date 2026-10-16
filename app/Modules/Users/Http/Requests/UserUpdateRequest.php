@@ -8,6 +8,9 @@ use App\Enums\UserRole;
 use App\Models\User;
 use App\Modules\Shared\Http\Requests\DataFormRequest;
 use App\Modules\Users\Data\UpdateUserData;
+use App\Modules\Users\Http\Requests\Concerns\AuthorizesRoutedAccount;
+use App\Modules\Users\Http\Requests\Concerns\PreparesAccountInput;
+use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
@@ -18,11 +21,12 @@ use Illuminate\Validation\Rules\Password;
  */
 final class UserUpdateRequest extends DataFormRequest
 {
-    public function authorize(): bool
-    {
-        $user = $this->route('user');
+    use AuthorizesRoutedAccount;
+    use PreparesAccountInput;
 
-        return $user instanceof User && ($this->user()?->can('update', $user) ?? false);
+    public function authorize(): Response
+    {
+        return $this->authorizeRoutedAccount('update');
     }
 
     /**
@@ -42,7 +46,7 @@ final class UserUpdateRequest extends DataFormRequest
                 Rule::unique(User::class, 'email')->ignore($user instanceof User ? $user->id : null),
             ],
             'role' => ['required', 'string', new Enum(UserRole::class)],
-            'password' => ['nullable', 'string', Password::defaults()],
+            'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
         ];
     }
 
