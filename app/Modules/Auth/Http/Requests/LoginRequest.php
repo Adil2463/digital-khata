@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Auth\Http\Requests;
 
+use App\Http\Middleware\EnsureAccountCanSignIn;
+use App\Models\User;
 use App\Modules\Auth\Data\LoginData;
 use App\Modules\Shared\Http\Requests\DataFormRequest;
 use Illuminate\Auth\Events\Lockout;
@@ -12,7 +14,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Override;
 
 /**
  * @extends DataFormRequest<LoginData>
@@ -37,7 +38,6 @@ final class LoginRequest extends DataFormRequest
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
-            'remember' => ['nullable', 'boolean'],
         ];
     }
 
@@ -51,15 +51,27 @@ final class LoginRequest extends DataFormRequest
         $this->ensureIsNotRateLimited();
 
         $loginData = $this->toDto();
+        $passwordMatchedBlockedAccount = false;
 
-        if (! Auth::attempt([
-            'email' => $loginData->email,
-            'password' => $loginData->password,
-        ], $loginData->remember)) {
+        // The callback only runs after the password is verified, so the specific message
+        // below never tells a guesser that an account exists.
+        $authenticated = Auth::attemptWhen(
+            [
+                'email' => Str::lower($loginData->email),
+                'password' => $loginData->password,
+            ],
+            static function (User $user) use (&$passwordMatchedBlockedAccount): bool {
+                $passwordMatchedBlockedAccount = ! $user->canSignIn();
+
+                return ! $passwordMatchedBlockedAccount;
+            },
+        );
+
+        if (! $authenticated) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'email' => $passwordMatchedBlockedAccount ? EnsureAccountCanSignIn::DEACTIVATED_MESSAGE : trans('auth.failed'),
             ]);
         }
 
@@ -100,16 +112,5 @@ final class LoginRequest extends DataFormRequest
     protected function dataClass(): string
     {
         return LoginData::class;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    #[Override]
-    protected function dtoPayload(): array
-    {
-        return array_merge($this->validated(), [
-            'remember' => $this->boolean('remember'),
-        ]);
     }
 }

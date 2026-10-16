@@ -14,6 +14,7 @@ final readonly class MutationMetadata
         public ?string $userAgent,
         public ?string $socketId,
         public CarbonImmutable $occurredAt,
+        public ?string $sessionId = null,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -25,6 +26,7 @@ final readonly class MutationMetadata
             userAgent: $request->userAgent(),
             socketId: is_string($socketId) && $socketId !== '' ? $socketId : null,
             occurredAt: CarbonImmutable::now(),
+            sessionId: $request->hasSession() ? $request->session()->getId() : null,
         );
     }
 }

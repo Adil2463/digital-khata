@@ -3,11 +3,12 @@
 declare(strict_types=1);
 
 use App\Enums\UserRole;
-use App\Models\User;
 use App\Modules\Shared\Auth\DemoAccounts;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -19,14 +20,20 @@ return new class extends Migration
             return;
         }
 
+        // The query builder writes only the columns this migration creates; the User model
+        // carries attributes added by later migrations that do not exist yet at this point.
+        $now = CarbonImmutable::now();
+
         foreach (DemoAccounts::CREDENTIALS as $credential) {
-            User::updateOrCreate(
+            DB::table('users')->updateOrInsert(
                 ['email' => $credential['email']],
                 [
                     'name' => $credential['name'],
-                    'role' => $credential['role'],
-                    'password' => $credential['password'],
-                    'email_verified_at' => $credential['role'] === UserRole::Admin ? CarbonImmutable::now() : null,
+                    'role' => $credential['role']->value,
+                    'password' => Hash::make($credential['password']),
+                    'email_verified_at' => $credential['role'] === UserRole::Admin ? $now : null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ]
             );
         }

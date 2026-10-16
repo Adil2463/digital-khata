@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Modules\Users\Data\UserIndexData;
 use App\Modules\Users\Queries\UserQueries;
 use Illuminate\Pagination\LengthAwarePaginator;
+use RuntimeException;
 
 final readonly class UserQueryHandler
 {
@@ -18,8 +19,12 @@ final readonly class UserQueryHandler
     /**
      * @return LengthAwarePaginator<int, User>
      */
-    public function index(UserIndexData $userIndexData): LengthAwarePaginator
+    public function index(UserIndexData $userIndexData, User $user): LengthAwarePaginator
     {
-        return $this->userQueries->paginate($userIndexData);
+        if ($user->shop_id === null) {
+            throw new RuntimeException('Only accounts that belong to a shop can list its users.');
+        }
+
+        return $this->userQueries->paginate($userIndexData, $user->shop_id);
     }
 }

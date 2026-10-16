@@ -18,6 +18,5 @@ Route::prefix('v1')->as('api.v1.')->group(function (): void {
             Route::get('users', [AdminUserController::class, 'index'])->name('users.index');
             Route::post('users', [AdminUserController::class, 'store'])->name('users.store');
             Route::put('users/{user}', [AdminUserController::class, 'update'])->name('users.update');
-            Route::delete('users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
         });
 });

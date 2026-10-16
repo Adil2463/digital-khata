@@ -12,31 +12,50 @@ use RuntimeException;
 final class CredentialRotator
 {
     /**
-     * Replaces the password and revokes every credential issued under the old one:
-     * remember-me cookies, API tokens, and database-backed sessions.
+     * Replaces the password and revokes every credential issued under the old one.
+     * `$keptSessionId` lets a user who changes their own password stay signed in on this device.
      */
-    public function replacePassword(User $user, string $plainPassword): void
+    public function replacePassword(User $user, string $plainPassword, ?string $keptSessionId = null): void
     {
-        $user->forceFill([
-            'password' => $plainPassword,
-            'remember_token' => Str::random(60),
-        ]);
+        $user->forceFill(['password' => $plainPassword]);
 
         if (! $user->save()) {
             throw new RuntimeException('Password update was cancelled.');
         }
 
+        $this->revokeAccess($user, $keptSessionId);
+    }
+
+    /**
+     * Revokes remember-me cookies, API tokens, and database-backed sessions.
+     * Other session drivers cannot be enumerated per user; `EnsureAccountCanSignIn`
+     * still ends deactivated sessions on their next request.
+     */
+    public function revokeAccess(User $user, ?string $keptSessionId = null): void
+    {
+        $user->forceFill(['remember_token' => Str::random(60)]);
+
+        if (! $user->save()) {
+            throw new RuntimeException('Credential revocation was cancelled.');
+        }
+
         $user->tokens()->delete();
 
-        // Other session drivers cannot be enumerated per user; their sessions expire with the lifetime.
-        if (config()->string('session.driver') === 'database') {
-            $connection = config('session.connection');
-
-            DB::connection(is_string($connection) ? $connection : null)
-                ->table(config()->string('session.table'))
-                ->where('user_id', $user->id)
-                ->delete();
+        if (config()->string('session.driver') !== 'database') {
+            return;
         }
+
+        $connection = config('session.connection');
+
+        $builder = DB::connection(is_string($connection) ? $connection : null)
+            ->table(config()->string('session.table'))
+            ->where('user_id', $user->id);
+
+        if ($keptSessionId !== null) {
+            $builder->where('id', '!=', $keptSessionId);
+        }
+
+        $builder->delete();
     }
 
     public function lock(User $user): void

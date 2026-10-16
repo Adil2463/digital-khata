@@ -163,6 +163,12 @@ export const appTheme = {
     },
     feedback: {
         status: 'text-sm font-medium',
+        pill: 'inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap',
+        pillTone: {
+            success: 'border-success/40 bg-success/10 text-success',
+            muted: 'border-border bg-muted text-muted-foreground',
+            info: 'border-info/40 bg-info/10 text-info'
+        },
         empty: 'flex flex-col items-center justify-center py-12 text-center',
         emptyIcon: 'mb-4 flex size-16 items-center justify-center rounded-full bg-muted text-muted-foreground',
         emptyTitle: 'text-lg font-semibold text-foreground',

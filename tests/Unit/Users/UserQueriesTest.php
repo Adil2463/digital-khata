@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\UserRole;
+use App\Models\Shop;
 use App\Models\User;
 use App\Modules\Shared\Enums\SortDirection;
 use App\Modules\Users\Data\UserIndexData;
@@ -15,7 +16,7 @@ uses(RefreshDatabase::class);
 test('pagination uses a stable tie breaker when primary sort values match', function (): void {
     $users = User::factory()->count(3)->create(['name' => 'Same Name']);
     $query = new UserIndexData(page: 2, perPage: 1, search: 'Same Name', sortBy: UserSortBy::Name, sortDirection: SortDirection::Desc);
-    $lengthAwarePaginator = new UserQueries()->paginate($query);
+    $lengthAwarePaginator = new UserQueries()->paginate($query, (int) $users->first()?->shop_id);
     expect($lengthAwarePaginator->getCollection()->modelKeys())->toBe([$users->get(1)?->id]);
 });
 
@@ -42,7 +43,7 @@ test('paginate applies search sort and pagination', function (): void {
         search: 'Query',
         sortBy: UserSortBy::Name,
         sortDirection: SortDirection::Desc,
-    ));
+    ), Shop::query()->sole()->id);
 
     expect($lengthAwarePaginator->currentPage())->toBe(1);
     expect($lengthAwarePaginator->perPage())->toBe(1);
@@ -50,3 +51,31 @@ test('paginate applies search sort and pagination', function (): void {
     expect($lengthAwarePaginator->items())->toHaveCount(1);
     expect($lengthAwarePaginator->getCollection()->sole()->email)->toBe('zulu-query@example.com');
 });
+
+test('paginate only lists accounts of the requested shop', function (): void {
+    $ownShopUser = User::factory()->create(['name' => 'Own Shop']);
+    $otherShop = Shop::factory()->create();
+    User::factory()->create(['name' => 'Other Shop', 'shop_id' => $otherShop->id]);
+
+    $lengthAwarePaginator = new UserQueries()->paginate(
+        new UserIndexData(page: 1, perPage: 10, search: null, sortBy: UserSortBy::Name, sortDirection: SortDirection::Asc),
+        (int) $ownShopUser->shop_id,
+    );
+
+    expect($lengthAwarePaginator->getCollection()->pluck('name')->all())->toBe(['Own Shop']);
+});
+
+test('search matches the owner and staff role labels', function (string $search, string $expectedName): void {
+    $owner = User::factory()->owner()->create(['name' => 'Shop Owner']);
+    User::factory()->create(['name' => 'Counter Helper']);
+
+    $lengthAwarePaginator = new UserQueries()->paginate(
+        new UserIndexData(page: 1, perPage: 10, search: $search, sortBy: UserSortBy::Name, sortDirection: SortDirection::Asc),
+        (int) $owner->shop_id,
+    );
+
+    expect($lengthAwarePaginator->getCollection()->pluck('name')->all())->toBe([$expectedName]);
+})->with([
+    'owner label' => ['owner', 'Shop Owner'],
+    'staff label' => ['STAFF', 'Counter Helper'],
+]);

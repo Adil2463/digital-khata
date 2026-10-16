@@ -77,7 +77,8 @@ final class UserManagementBroadcastNotification extends Notification implements 
         return match ($this->usersRealtimeAction) {
             UsersRealtimeAction::Create => sprintf('%s created %s.', $this->actorName, $this->targetLabel),
             UsersRealtimeAction::Update => sprintf('%s updated %s.', $this->actorName, $this->targetLabel),
-            UsersRealtimeAction::Delete => sprintf('%s deleted %s.', $this->actorName, $this->targetLabel),
+            UsersRealtimeAction::Deactivate => sprintf('%s deactivated %s.', $this->actorName, $this->targetLabel),
+            UsersRealtimeAction::Reactivate => sprintf('%s reactivated %s.', $this->actorName, $this->targetLabel),
         };
     }
 }

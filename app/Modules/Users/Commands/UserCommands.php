@@ -4,63 +4,162 @@ declare(strict_types=1);
 
 namespace App\Modules\Users\Commands;
 
+use App\Enums\UserRole;
 use App\Models\User;
+use App\Modules\Shared\Auth\CredentialRotator;
 use App\Modules\Users\Data\CreateUserData;
 use App\Modules\Users\Data\UpdateUserData;
 use BackedEnum;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 use Stringable;
 
-final class UserCommands
+final readonly class UserCommands
 {
-    public function create(CreateUserData $createUserData): UserCommandResult
+    public function __construct(
+        private CredentialRotator $credentialRotator,
+    ) {}
+
+    /**
+     * The new account joins the owner's shop and is verified: the owner vouches for it,
+     * and no verification email could be delivered anyway.
+     */
+    public function create(CreateUserData $createUserData, User $owner): UserCommandResult
     {
-        $user = User::create([
+        if ($owner->shop_id === null) {
+            throw new RuntimeException('Only an owner who belongs to a shop can create accounts.');
+        }
+
+        $user = new User();
+        $user->forceFill([
             'name' => $createUserData->name,
             'email' => $createUserData->email,
             'role' => $createUserData->role,
             'password' => $createUserData->password,
+            'shop_id' => $owner->shop_id,
+            'email_verified_at' => CarbonImmutable::now(),
         ]);
 
-        if (! $user->exists) {
+        if (! $user->save()) {
             throw new RuntimeException('User creation was cancelled.');
         }
 
         return new UserCommandResult(user: $user);
     }
 
-    public function update(User $user, UpdateUserData $updateUserData): UserCommandResult
+    /**
+     * A changed login or password signs the account out everywhere, except the actor's own
+     * current session when they edit themselves.
+     *
+     * @throws ValidationException
+     */
+    public function update(User $user, UpdateUserData $updateUserData, User $actor, ?string $actorSessionId = null): UserCommandResult
     {
-        $before = [
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role,
-        ];
+        return DB::transaction(function () use ($user, $updateUserData, $actor, $actorSessionId): UserCommandResult {
+            if ($user->isOwner() && $updateUserData->role !== UserRole::Admin) {
+                $this->ensureOwnerRemains($user, $actor, 'role', 'You cannot remove your own Owner role.');
+            }
 
-        $user->name = $updateUserData->name;
-        $user->email = $updateUserData->email;
-        $user->role = $updateUserData->role;
+            $before = [
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ];
 
-        $passwordChanged = $updateUserData->password !== null && $updateUserData->password !== '';
+            $user->name = $updateUserData->name;
+            $user->email = $updateUserData->email;
+            $user->role = $updateUserData->role;
+            $user->email_verified_at ??= CarbonImmutable::now();
 
-        if ($passwordChanged) {
-            $user->password = $updateUserData->password;
-        }
+            $loginChanged = $user->isDirty('email');
+            $passwordChanged = $updateUserData->password !== null && $updateUserData->password !== '';
+
+            if ($passwordChanged) {
+                $user->password = $updateUserData->password;
+            }
+
+            if (! $user->save()) {
+                throw new RuntimeException('User update was cancelled.');
+            }
+
+            if ($loginChanged || $passwordChanged) {
+                $this->credentialRotator->revokeAccess($user, $user->is($actor) ? $actorSessionId : null);
+            }
+
+            return new UserCommandResult(
+                user: $user,
+                changes: $this->computeChanges($before, $user, $passwordChanged),
+            );
+        });
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function deactivate(User $user, User $actor): UserCommandResult
+    {
+        return DB::transaction(function () use ($user, $actor): UserCommandResult {
+            if ($user->isOwner()) {
+                $this->ensureOwnerRemains($user, $actor, 'account', 'You cannot deactivate your own account.');
+            }
+
+            if ($user->is($actor)) {
+                throw ValidationException::withMessages(['account' => 'You cannot deactivate your own account.']);
+            }
+
+            $user->deactivated_at = CarbonImmutable::now();
+
+            if (! $user->save()) {
+                throw new RuntimeException('User deactivation was cancelled.');
+            }
+
+            $this->credentialRotator->revokeAccess($user);
+
+            return new UserCommandResult(
+                user: $user,
+                changes: ['status' => ['before' => 'active', 'after' => 'deactivated']],
+            );
+        });
+    }
+
+    public function reactivate(User $user): UserCommandResult
+    {
+        $user->deactivated_at = null;
 
         if (! $user->save()) {
-            throw new RuntimeException('User update was cancelled.');
+            throw new RuntimeException('User reactivation was cancelled.');
         }
 
         return new UserCommandResult(
             user: $user,
-            changes: $this->computeChanges($before, $user, $passwordChanged),
+            changes: ['status' => ['before' => 'deactivated', 'after' => 'active']],
         );
     }
 
-    public function delete(User $user): void
+    /**
+     * Locks the shop's owner rows so two owners demoting or deactivating each other at the
+     * same time cannot leave the shop without an active owner.
+     *
+     * @throws ValidationException
+     */
+    private function ensureOwnerRemains(User $owner, User $actor, string $field, string $selfMessage): void
     {
-        if ($user->delete() !== true) {
-            throw new RuntimeException('User deletion was cancelled.');
+        if ($owner->is($actor)) {
+            throw ValidationException::withMessages([$field => $selfMessage]);
+        }
+
+        $otherActiveOwnerIds = User::query()
+            ->where('shop_id', $owner->shop_id)
+            ->where('role', UserRole::Admin)
+            ->whereNull('deactivated_at')
+            ->whereKeyNot($owner->id)
+            ->lockForUpdate()
+            ->pluck('id');
+
+        if ($otherActiveOwnerIds->isEmpty()) {
+            throw ValidationException::withMessages([$field => 'The shop must keep at least one active owner.']);
         }
     }
 

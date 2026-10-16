@@ -52,7 +52,7 @@ describe('useNavigation', () => {
         const itemsByTitle = new Map(dashboardPrimaryItems.value.map((item) => [item.title, item]))
 
         expect(itemsByTitle.get('Dashboard')?.isActive).toBe(false)
-        expect(itemsByTitle.get('Users')?.isActive).toBe(true)
+        expect(itemsByTitle.get('Staff')?.isActive).toBe(true)
     })
 
     it('keeps home inactive off root and hides admin links for non-admin users', () => {
@@ -67,7 +67,7 @@ describe('useNavigation', () => {
 
         expect(marketingByTitle.get('Home')?.isActive).toBe(false)
         expect(marketingByTitle.get('Dashboard')?.isActive).toBe(true)
-        expect(dashboardPrimaryItems.value.some((item) => item.title === 'Users')).toBe(false)
+        expect(dashboardPrimaryItems.value.some((item) => item.title === 'Staff')).toBe(false)
     })
 
     it('offers guests only the login action because public registration is disabled', () => {
@@ -123,6 +123,7 @@ function createUser(role: UserRole): NonNullable<AppPageProps['auth']['user']> {
         role,
         created_at: '2026-01-01T00:00:00+00:00',
         updated_at: '2026-01-01T00:00:00+00:00',
-        email_verified_at: null
+        email_verified_at: null,
+        deactivated_at: null
     }
 }

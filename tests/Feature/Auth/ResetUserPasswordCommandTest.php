@@ -63,7 +63,8 @@ test('it rejects invalid passwords and keeps the old one', function (string $pas
 
     expect(Hash::check('password', $user->refresh()->password))->toBeTrue();
 })->with([
-    'too short' => ['short', 'short', 'at least 8 characters'],
+    'too short' => ['short1', 'short1', 'at least 10 characters'],
+    'no letters' => ['1234567890', '1234567890', 'at least one letter'],
     'mismatched' => [NEW_PASSWORD, 'Something-Else-1', 'confirmation does not match'],
 ]);
 

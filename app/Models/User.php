@@ -26,6 +26,7 @@ use Override;
  * @property string $password
  * @property UserRole $role
  * @property int|null $shop_id
+ * @property CarbonInterface|null $deactivated_at
  * @property CarbonInterface|null $email_verified_at
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
@@ -42,6 +43,16 @@ final class User extends Authenticatable implements MustVerifyEmailContract
 
     protected $guarded = [];
 
+    /**
+     * Mirrors the column defaults so sign-in checks never read a missing attribute on a fresh model.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'shop_id' => null,
+        'deactivated_at' => null,
+    ];
+
     protected $hidden = ['password', 'remember_token'];
 
     /**
@@ -50,6 +61,24 @@ final class User extends Authenticatable implements MustVerifyEmailContract
     public function shop(): BelongsTo
     {
         return $this->belongsTo(Shop::class);
+    }
+
+    public function isOwner(): bool
+    {
+        return $this->role === UserRole::Admin;
+    }
+
+    /**
+     * Only active accounts attached to a shop may sign in or keep an authenticated session.
+     */
+    public function canSignIn(): bool
+    {
+        return $this->deactivated_at === null && $this->shop_id !== null;
+    }
+
+    public function belongsToShopOf(self $user): bool
+    {
+        return $this->shop_id !== null && $this->shop_id === $user->shop_id;
     }
 
     public function receivesBroadcastNotificationsOn(): string
@@ -62,15 +91,6 @@ final class User extends Authenticatable implements MustVerifyEmailContract
         return UserViewData::fromModel($this);
     }
 
-    protected static function booted(): void
-    {
-        self::updating(function (self $user): void {
-            if ($user->isDirty('email') && ! $user->isDirty('email_verified_at')) {
-                $user->email_verified_at = null;
-            }
-        });
-    }
-
     /**
      * @return array<string, class-string<UserRole>|string>
      */
@@ -79,6 +99,7 @@ final class User extends Authenticatable implements MustVerifyEmailContract
     {
         return [
             'email_verified_at' => 'datetime',
+            'deactivated_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
         ];

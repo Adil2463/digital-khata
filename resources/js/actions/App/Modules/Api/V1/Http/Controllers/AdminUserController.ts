@@ -45,7 +45,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Modules\Api\V1\Http\Controllers\AdminUserController::store
-* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:35
+* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:37
 * @route '/api/v1/admin/users'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -60,7 +60,7 @@ store.definition = {
 
 /**
 * @see \App\Modules\Api\V1\Http\Controllers\AdminUserController::store
-* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:35
+* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:37
 * @route '/api/v1/admin/users'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -69,7 +69,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Modules\Api\V1\Http\Controllers\AdminUserController::store
-* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:35
+* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:37
 * @route '/api/v1/admin/users'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -79,7 +79,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Modules\Api\V1\Http\Controllers\AdminUserController::update
-* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:45
+* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:47
 * @route '/api/v1/admin/users/{user}'
 */
 export const update = (args: { user: number | { id: number } } | [user: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -94,7 +94,7 @@ update.definition = {
 
 /**
 * @see \App\Modules\Api\V1\Http\Controllers\AdminUserController::update
-* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:45
+* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:47
 * @route '/api/v1/admin/users/{user}'
 */
 update.url = (args: { user: number | { id: number } } | [user: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -127,7 +127,7 @@ update.url = (args: { user: number | { id: number } } | [user: number | { id: nu
 
 /**
 * @see \App\Modules\Api\V1\Http\Controllers\AdminUserController::update
-* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:45
+* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:47
 * @route '/api/v1/admin/users/{user}'
 */
 update.put = (args: { user: number | { id: number } } | [user: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -135,64 +135,6 @@ update.put = (args: { user: number | { id: number } } | [user: number | { id: nu
     method: 'put',
 })
 
-/**
-* @see \App\Modules\Api\V1\Http\Controllers\AdminUserController::destroy
-* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:56
-* @route '/api/v1/admin/users/{user}'
-*/
-export const destroy = (args: { user: number | { id: number } } | [user: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
-    url: destroy.url(args, options),
-    method: 'delete',
-})
-
-destroy.definition = {
-    methods: ["delete"],
-    url: '/api/v1/admin/users/{user}',
-} satisfies RouteDefinition<["delete"]>
-
-/**
-* @see \App\Modules\Api\V1\Http\Controllers\AdminUserController::destroy
-* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:56
-* @route '/api/v1/admin/users/{user}'
-*/
-destroy.url = (args: { user: number | { id: number } } | [user: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
-    if (typeof args === 'string' || typeof args === 'number') {
-        args = { user: args }
-    }
-
-    if (typeof args === 'object' && !Array.isArray(args) && 'id' in args) {
-        args = { user: args.id }
-    }
-
-    if (Array.isArray(args)) {
-        args = {
-            user: args[0],
-        }
-    }
-
-    args = applyUrlDefaults(args)
-
-    const parsedArgs = {
-        user: typeof args.user === 'object'
-        ? args.user.id
-        : args.user,
-    }
-
-    return destroy.definition.url
-            .replace('{user}', parsedArgs.user.toString())
-            .replace(/\/+$/, '') + queryParams(options)
-}
-
-/**
-* @see \App\Modules\Api\V1\Http\Controllers\AdminUserController::destroy
-* @see app/Modules/Api/V1/Http/Controllers/AdminUserController.php:56
-* @route '/api/v1/admin/users/{user}'
-*/
-destroy.delete = (args: { user: number | { id: number } } | [user: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
-    url: destroy.url(args, options),
-    method: 'delete',
-})
-
-const AdminUserController = { index, store, update, destroy }
+const AdminUserController = { index, store, update }
 
 export default AdminUserController

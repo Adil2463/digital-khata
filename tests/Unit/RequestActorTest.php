@@ -8,7 +8,7 @@ use Illuminate\Auth\GenericUser;
 use Illuminate\Http\Request;
 
 test('it returns the authenticated application user', function (): void {
-    $user = User::factory()->make();
+    $user = User::factory()->withoutShop()->make();
     $request = Request::create('/app/dashboard');
     $request->setUserResolver(static fn (): User => $user);
 

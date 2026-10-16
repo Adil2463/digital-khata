@@ -12,13 +12,14 @@ use App\Modules\Users\Handlers\UserCommandHandler;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Validation\ValidationException;
 
 uses(RefreshDatabase::class);
 
 test('create dispatches management event with context metadata', function (): void {
     Event::fake([UserManagementEvent::class]);
 
-    $actor = User::factory()->create(['role' => UserRole::Admin]);
+    $actor = User::factory()->owner()->create();
     $userCommandResult = app(UserCommandHandler::class)->create(
         new CreateUserData(
             name: 'Created User',
@@ -40,7 +41,7 @@ test('create dispatches management event with context metadata', function (): vo
 test('update dispatches management event with audited changes', function (): void {
     Event::fake([UserManagementEvent::class]);
 
-    $actor = User::factory()->create(['role' => UserRole::Admin]);
+    $actor = User::factory()->owner()->create();
     $target = User::factory()->create([
         'name' => 'Before Name',
         'email' => 'before@example.com',
@@ -71,42 +72,38 @@ test('update dispatches management event with audited changes', function (): voi
             && $userManagementEvent->context->target?->is($target) === true;
     });
 });
-test('delete dispatches management event after removing user', function (): void {
+test('deactivate and reactivate dispatch management events', function (): void {
     Event::fake([UserManagementEvent::class]);
 
-    $actor = User::factory()->create(['role' => UserRole::Admin]);
-    $target = User::factory()->create(['role' => UserRole::User]);
+    $actor = User::factory()->owner()->create();
+    $target = User::factory()->create();
+    $userCommandHandler = app(UserCommandHandler::class);
 
-    app(UserCommandHandler::class)->delete($target, $this->userActionContext($actor));
+    $userCommandHandler->deactivate($target, $this->userActionContext($actor));
+    $userCommandHandler->reactivate($target, $this->userActionContext($actor));
 
-    Event::assertDispatched(UserManagementEvent::class, static fn (UserManagementEvent $userManagementEvent): bool => $userManagementEvent->context->action === 'delete'
-        && $userManagementEvent->context->actor->is($actor)
-        && $userManagementEvent->context->target?->id === $target->id
-        && $userManagementEvent->context->socketId() === '1234.5678'
-        && $userManagementEvent->context->changes === []);
-
-    expect($target->exists)->toBeFalse();
-    $this->assertDatabaseMissing('users', ['id' => $target->id]);
+    Event::assertDispatched(UserManagementEvent::class, static fn (UserManagementEvent $userManagementEvent): bool => $userManagementEvent->context->action === 'deactivate'
+        && $userManagementEvent->context->target?->is($target) === true
+        && $userManagementEvent->context->changes === ['status' => ['before' => 'active', 'after' => 'deactivated']]);
+    Event::assertDispatched(UserManagementEvent::class, static fn (UserManagementEvent $userManagementEvent): bool => $userManagementEvent->context->action === 'reactivate'
+        && $userManagementEvent->context->changes === ['status' => ['before' => 'deactivated', 'after' => 'active']]);
+    $this->assertDatabaseHas('users', ['id' => $target->id, 'deactivated_at' => null]);
 });
 
-test('failed deletion does not announce a successful mutation', function (): void {
+test('a refused deactivation does not announce a mutation', function (): void {
     Event::fake([UserManagementEvent::class]);
-    $actor = User::factory()->create(['role' => UserRole::Admin]);
-    $target = User::factory()->create();
-    User::deleting(static function (): never {
-        throw new RuntimeException('Deletion failed');
-    });
+    $actor = User::factory()->owner()->create();
 
-    expect(fn () => app(UserCommandHandler::class)->delete($target, $this->userActionContext($actor)))
-        ->toThrow(RuntimeException::class, 'Deletion failed');
+    expect(fn (): mixed => app(UserCommandHandler::class)->deactivate($actor, $this->userActionContext($actor)))
+        ->toThrow(ValidationException::class);
 
     Event::assertNotDispatched(UserManagementEvent::class);
-    $this->assertDatabaseHas('users', ['id' => $target->id]);
+    expect($actor->fresh()?->deactivated_at)->toBeNull();
 });
 
 test('rolled back mutations do not dispatch side effects', function (): void {
     Event::fake([UserManagementEvent::class]);
-    $actor = User::factory()->create(['role' => UserRole::Admin]);
+    $actor = User::factory()->owner()->create();
 
     DB::beginTransaction();
     app(UserCommandHandler::class)->create(
@@ -122,35 +119,35 @@ test('rolled back mutations do not dispatch side effects', function (): void {
 
 test('cancelled persistence never dispatches a successful mutation', function (UsersRealtimeAction $usersRealtimeAction): void {
     Event::fake([UserManagementEvent::class]);
-    $actor = User::factory()->create(['role' => UserRole::Admin]);
+    $actor = User::factory()->owner()->create();
     $target = User::factory()->create(['name' => 'Unchanged']);
     $userCommandHandler = app(UserCommandHandler::class);
     $context = $this->userActionContext($actor);
 
     User::saving(static fn (): bool => false);
-    User::deleting(static fn (): bool => false);
 
     expect(fn () => match ($usersRealtimeAction) {
         UsersRealtimeAction::Create => $userCommandHandler->create(new CreateUserData('Cancelled', 'cancelled@example.com', UserRole::User, 'Password123!@#'), $context),
         UsersRealtimeAction::Update => $userCommandHandler->update($target, new UpdateUserData('Cancelled', $target->email, $target->role), $context),
-        UsersRealtimeAction::Delete => $userCommandHandler->delete($target, $context),
+        UsersRealtimeAction::Deactivate => $userCommandHandler->deactivate($target, $context),
+        UsersRealtimeAction::Reactivate => $userCommandHandler->reactivate($target, $context),
     })->toThrow(RuntimeException::class);
 
     Event::assertNotDispatched(UserManagementEvent::class);
-    $this->assertDatabaseHas('users', ['id' => $target->id, 'name' => 'Unchanged']);
+    $this->assertDatabaseHas('users', ['id' => $target->id, 'name' => 'Unchanged', 'deactivated_at' => null]);
     $this->assertDatabaseMissing('users', ['email' => 'cancelled@example.com']);
 })->with(UsersRealtimeAction::cases());
 
 test('deferred events retain each mutation snapshot until commit', function (): void {
     Event::fake([UserManagementEvent::class]);
-    $actor = User::factory()->create(['role' => UserRole::Admin]);
+    $actor = User::factory()->owner()->create();
     $target = User::factory()->create(['name' => 'Original']);
     $userCommandHandler = app(UserCommandHandler::class);
 
     DB::transaction(function () use ($userCommandHandler, $actor, $target): void {
         $userCommandHandler->update($target, new UpdateUserData('First', $target->email, $target->role), $this->userActionContext($actor));
         $userCommandHandler->update($target, new UpdateUserData('Second', $target->email, $target->role), $this->userActionContext($actor));
-        $userCommandHandler->delete($target, $this->userActionContext($actor));
+        $userCommandHandler->deactivate($target, $this->userActionContext($actor));
 
         $actor->name = 'Changed after dispatch';
         Event::assertNotDispatched(UserManagementEvent::class);
@@ -164,6 +161,7 @@ test('deferred events retain each mutation snapshot until commit', function (): 
     Event::assertDispatched(UserManagementEvent::class, static fn (UserManagementEvent $userManagementEvent): bool => $userManagementEvent->context->action === 'update'
         && $userManagementEvent->context->target?->name === 'Second'
         && $userManagementEvent->context->target->exists);
-    Event::assertDispatched(UserManagementEvent::class, static fn (UserManagementEvent $userManagementEvent): bool => $userManagementEvent->context->action === 'delete'
-        && $userManagementEvent->context->target?->exists === false);
+    Event::assertDispatched(UserManagementEvent::class, static fn (UserManagementEvent $userManagementEvent): bool => $userManagementEvent->context->action === 'deactivate'
+        && $userManagementEvent->context->target?->name === 'Second'
+        && $userManagementEvent->context->target->deactivated_at !== null);
 });

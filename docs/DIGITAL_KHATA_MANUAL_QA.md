@@ -49,7 +49,43 @@ Optional: set `APP_SEED_USERS=false` in your own `.env` (the default is now `fal
 | B10 | Stay logged in in one browser. In a terminal run `php artisan khata:user:reset-password <owner login>` with a new password. Then click any page in the browser | You are sent to the login page (the database session was revoked). The old password fails and the new one works                                    |
 | B11 | Wrong password 6 times quickly on the login page                                                                                                               | Throttled with a "Too many login attempts" message (existing behaviour, unchanged)                                                                 |
 
-Known and expected in 2A (fixed in 2B): a staff account you create in Users will be asked to verify its email. Account self-deletion is still present under Settings → Profile; do not use it on the owner account.
+## 2b. Phase 2B Checklist (Owner And Staff Management)
+
+### Setup
+
+```powershell
+Set-Location D:\digital-khata
+git switch feat/phase-2b-staff-management
+php artisan migrate        # adds users.deactivated_at; no data is changed
+composer dev               # open http://127.0.0.1:8000
+```
+
+In your own `.env`, change `SESSION_LIFETIME=120` to `SESSION_LIFETIME=30` (the new default; your file overrides it), then restart `composer dev`. Use two browsers or a normal and a private window: **A** for the owner, **B** for staff.
+
+### Browser Checks
+
+| #   | Step                                                                                                                                                                                       | Expected                                                                                                                                                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S1  | A: log in as the owner                                                                                                                                                                     | The login form has no "Remember me". The sidebar shows **Staff** (not "Users")                                                                                                                    |
+| S2  | A: Staff → **Add staff**: name `Ali Raza`, login `ali@shop.local`, role Staff, password and confirmation `Counter-Staff-2026`                                                              | Toast "Ali Raza can now log in as ali@shop.local". The row shows a **Staff** pill and an **Active** pill                                                                                          |
+| S3  | A: try Add staff with password `abc12345`, then `only-letters-here`, then mismatched confirmation, then login `ALI@shop.local`                                                             | Field errors: at least 10 characters; at least one number; confirmation does not match; "The login has already been taken." No account is created                                                 |
+| S4  | B: log in as `ali@shop.local` / `Counter-Staff-2026`                                                                                                                                       | The dashboard opens directly, with **no** "verify your email" screen. The sidebar has no Staff item                                                                                               |
+| S5  | B: type `/app/admin/users` in the address bar                                                                                                                                              | 403 page                                                                                                                                                                                          |
+| S6  | A: edit Ali, change only the name to `Ali R.`. B: click any page                                                                                                                           | B stays signed in                                                                                                                                                                                 |
+| S7  | A: edit Ali, set new password `Fresh-Staff-Pass-7` (twice). B: click any page                                                                                                              | B is sent to the login page. The old password fails; the new one works                                                                                                                            |
+| S8  | A: edit Ali, change login to `ali.raza@shop.local`. B: click any page                                                                                                                      | B is signed out; logging in with the new login works                                                                                                                                              |
+| S9  | A: open Ali's row menu → **Deactivate**, read the dialog, confirm. B: click any page                                                                                                       | The row shows **Deactivated**. B lands on login with "Your account is deactivated. Ask the shop owner to reactivate it."                                                                          |
+| S10 | B: log in as Ali with the correct password, then with a wrong one                                                                                                                          | Correct password: the deactivated message. Wrong password: "These credentials do not match our records."                                                                                          |
+| S11 | A: Ali's menu → **Reactivate**, confirm. B: log in as Ali                                                                                                                                  | Toast "… can log in again"; B reaches the dashboard                                                                                                                                               |
+| S12 | A: look at your own row and edit yourself                                                                                                                                                  | Your row says "(you)" and has no Deactivate action. In the edit dialog the role is locked with "You cannot change your own role."                                                                 |
+| S13 | A: Settings → Profile                                                                                                                                                                      | There is no "Delete account" section                                                                                                                                                              |
+| S14 | Log in as the owner in **B** too. A: Settings → Password, change your password. Then click in A and in B                                                                                   | A stays signed in; B is sent to login                                                                                                                                                             |
+| S15 | A: search `staff`, then `owner`                                                                                                                                                            | Each search lists only accounts with that role                                                                                                                                                    |
+| S16 | Narrow A to phone width (about 360 px) and open Staff                                                                                                                                      | Cards show name, login, role and status; the row menu works                                                                                                                                       |
+| S17 | Log out. Log in with `admin@app.com` / `Admin123!@#`, then `user@app.com` / `User123!@#`                                                                                                   | Both rejected: demo accounts stay locked                                                                                                                                                          |
+| S18 | Wrong password 6 times in a row for one login                                                                                                                                              | "Too many login attempts. Please try again in … seconds."                                                                                                                                         |
+| S19 | Idle timeout: set `SESSION_LIFETIME=1` in `.env`, restart `composer dev`, log in, wait 2 minutes, then click a link. Repeat, but this time leave a form open and submit it after 2 minutes | Link: the login page. Form submit: the login page with "Your session expired after a period of inactivity. Please log in again." and no error dialog. Afterwards, set `SESSION_LIFETIME=30` again |
+| S20 | Optional: add a second owner, then try to make yourself Staff                                                                                                                              | Error on Role: "You cannot remove your own Owner role." The other owner can be deactivated; you cannot                                                                                            |
 
 ## 3. Standing Checks (Every Later Phase)
 
@@ -71,14 +107,6 @@ Use a fresh database (`php artisan migrate:fresh` on a **copy**, never on real d
 - [ ] Reports (Phase 8): collections Rs 4,500, advances returned Rs 130, net cash in Rs 4,370, udhaar given Rs 2,170. A period containing a later-recorded correction shows the corrections notice; its "as recorded at" view shows the pre-correction figure.
 
 ## 5. Phase-Specific Scripts (Expanded When Each Phase Starts)
-
-### Phase 2B — Staff Accounts And Session Security
-
-- [ ] The owner creates a staff account; staff logs in without any email verification screen.
-- [ ] Staff cannot open Users/Staff management.
-- [ ] Deactivating staff logs them out on their next click; reactivating restores access; the owner cannot deactivate themself.
-- [ ] Settings → Profile no longer offers account deletion.
-- [ ] Leaving the browser idle longer than the configured timeout requires logging in again.
 
 ### Phase 2C — Shop Settings And App Shell
 
@@ -106,3 +134,4 @@ Detailed scripts are written at the start of each phase from Vision workflows W3
 | Date | Phase | Tester | Result | Notes |
 | ---- | ----- | ------ | ------ | ----- |
 |      | 2A    |        |        |       |
+|      | 2B    |        |        |       |

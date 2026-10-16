@@ -33,7 +33,7 @@ function installShop(TestCase $testCase, string $ownerEmail = 'owner@shop.local'
  */
 function seedPublishedDemoAccount(array $credential): User
 {
-    return User::factory()->create([
+    return User::factory()->withoutShop()->create([
         'name' => $credential['name'],
         'email' => $credential['email'],
         'role' => $credential['role'],
@@ -119,7 +119,7 @@ test('it refuses to run without an interactive password prompt', function (): vo
 });
 
 test('it rejects invalid input without creating anything', function (string $ownerEmail, string $password, string $confirmation, ?string $timezone, string $message): void {
-    User::factory()->create(['email' => 'taken@shop.local']);
+    User::factory()->withoutShop()->create(['email' => 'taken@shop.local']);
 
     $this->pendingArtisan('khata:install', [
         '--shop-name' => 'Shop',
@@ -135,7 +135,8 @@ test('it rejects invalid input without creating anything', function (string $own
     expect(Shop::query()->exists())->toBeFalse()
         ->and(User::query()->count())->toBe(1);
 })->with([
-    'short password' => ['owner@shop.local', 'short', 'short', null, 'at least 8 characters'],
+    'short password' => ['owner@shop.local', 'short1', 'short1', null, 'at least 10 characters'],
+    'password without numbers' => ['owner@shop.local', 'OnlyLettersHere', 'OnlyLettersHere', null, 'at least one number'],
     'mismatched confirmation' => ['owner@shop.local', OWNER_PASSWORD, 'Different-Pass-1', null, 'confirmation does not match'],
     'login already used' => ['taken@shop.local', OWNER_PASSWORD, OWNER_PASSWORD, null, 'already been taken'],
     'not an email' => ['owner', OWNER_PASSWORD, OWNER_PASSWORD, null, 'valid email address'],
@@ -190,7 +191,7 @@ test('declining to lock demo accounts cancels installation and changes nothing',
 });
 
 test('demo emails with changed passwords are left untouched', function (): void {
-    $admin = User::factory()->create(['email' => 'admin@app.com', 'password' => 'Owner-Changed-It-1']);
+    $admin = User::factory()->withoutShop()->create(['email' => 'admin@app.com', 'password' => 'Owner-Changed-It-1']);
 
     installShop($this)->assertSuccessful();
 
@@ -198,7 +199,7 @@ test('demo emails with changed passwords are left untouched', function (): void 
 });
 
 test('existing accounts are attached to the new shop', function (): void {
-    $existing = User::factory()->count(2)->create();
+    $existing = User::factory()->withoutShop()->count(2)->create();
 
     installShop($this)
         ->expectsOutputToContain('Existing accounts attached to the shop')

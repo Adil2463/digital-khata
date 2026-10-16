@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace App\Modules\Users\Http\Requests;
 
-use App\Models\User;
+use App\Modules\Users\Http\Requests\Concerns\AuthorizesRoutedAccount;
+use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-final class UserDestroyRequest extends FormRequest
+final class UserDeactivateRequest extends FormRequest
 {
-    public function authorize(): bool
-    {
-        $user = $this->route('user');
+    use AuthorizesRoutedAccount;
 
-        return $user instanceof User && ($this->user()?->can('delete', $user) ?? false);
+    public function authorize(): Response
+    {
+        return $this->authorizeRoutedAccount('deactivate');
     }
 
     /**

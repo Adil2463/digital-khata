@@ -5,8 +5,8 @@ Delivery happens in phases. Each phase (and each Phase 2 part) starts only after
 | #   | Phase                                      | Status                        |
 | --- | ------------------------------------------ | ----------------------------- |
 | 1   | Foundation and Architecture                | Complete, approved            |
-| 2A  | Shop foundation and secure installation    | Implemented — awaiting review |
-| 2B  | Staff accounts and session security        | Proposed (below)              |
+| 2A  | Shop foundation and secure installation    | Complete, approved            |
+| 2B  | Owner and staff management                 | Implemented — awaiting review |
 | 2C  | Shop settings and app shell                | Proposed (below)              |
 | 3   | Customer Management                        | Not started                   |
 | 4   | Financial Ledger Engine                    | Not started                   |
@@ -17,7 +17,7 @@ Delivery happens in phases. Each phase (and each Phase 2 part) starts only after
 | 9   | Backup and Data Safety                     | Not started                   |
 | 10  | Production Readiness and Real-Shop Testing | Not started                   |
 
-## Phase 2A — Shop Foundation And Secure Installation (Implemented)
+## Phase 2A — Shop Foundation And Secure Installation (Complete)
 
 - `shops` table and `users.shop_id` (nullable, `RESTRICT`), `App\Models\Shop`, `User::shop()`.
 - `php artisan khata:install`: creates the single shop and a verified owner from hidden password prompts. It refuses a second run, refuses `--no-interaction`, validates input (`Password::defaults()`, unique login, real timezone), and attaches all existing accounts to the shop. It detects accounts still using the starter kit's published demo passwords and, after confirmation, locks them (random unknown password, remember token rotated, Sanctum tokens and database sessions revoked) without deleting them. Declining cancels with no changes. Output and the audit log never contain passwords.
@@ -26,17 +26,22 @@ Delivery happens in phases. Each phase (and each Phase 2 part) starts only after
 - Email forgot/reset password removed: routes, controllers, requests, DTOs, pages, form schemas, the `ResetPassword` URL hook, the login link (replaced by "Ask the shop owner to reset it"), tests.
 - Demo seeding: `APP_SEED_USERS` defaults to `false`, is pinned `false` in `phpunit.xml`, and never seeds in production.
 
-Known limits, handled in 2B: staff created on the Users screen still need email verification and get no `shop_id`; account self-deletion still exists; session lifetime is the framework default (120 idle minutes).
+Known limits at the end of 2A were resolved in 2B.
 
-## Phase 2B — Staff Accounts And Session Security (Proposed)
+## Phase 2B — Owner And Staff Management (Implemented)
 
-1. Owner-created and owner-edited staff are marked verified without email, inside `UserCommands`. The owner's own email change stays verified.
-2. New users inherit the creating owner's `shop_id`; application validation requires it.
-3. `users.deactivated_at`: deactivate/reactivate instead of delete. Deactivated users cannot log in, and an active session ends on the next request. The owner cannot deactivate themself or the last active owner.
-4. UI labels Owner/Staff; "Users" navigation becomes "Staff".
-5. Remove self account deletion from Settings → Profile (route, controller action, request, DTO, component, form schema, tests).
-6. Session inactivity timeout: a documented, configurable default for an unattended counter (decision O1), a decision on "Remember me", and expiry tests.
-7. Tests, `AGENTS.md`, README, and these documents.
+- `users.deactivated_at` (migration `2026_10_17_000001_add_deactivated_at_to_users_table`). An account can sign in only when it belongs to a shop and is not deactivated (`User::canSignIn()`).
+- Staff screen (`/app/admin/users`, owner-only): add staff or another owner, edit name, login, role, or password, deactivate, reactivate. There is no deletion anywhere (web, API, or Settings).
+- New accounts join the creating owner's shop; a client-sent `shop_id` is ignored. Owner-created and owner-edited accounts are verified, so staff never see the email verification screen.
+- Logins are trimmed and lower-cased and must be unique. Passwords need at least 10 characters with letters and numbers, confirmed, everywhere (`Password::defaults()`).
+- Changing a login or password revokes that account's remember token, API tokens, and database sessions; owners editing themselves stay signed in on the current device. Deactivation revokes everything.
+- `EnsureAccountCanSignIn` checks every authenticated web and API request, so a deactivated account loses access on its next click, even with another session driver or a surviving session row.
+- Owners cannot deactivate or demote themselves; a shop always keeps one active owner (enforced under row locks). Other shops' accounts return 404.
+- Remember Me removed. Sessions expire after 30 idle minutes (`SESSION_LIFETIME`); an expired form submit returns to login with a message.
+- Login throttling: 5 attempts per login and IP (existing) plus 20 per minute per IP across logins (new `login` limiter).
+- Account self-deletion removed from Settings → Profile. Changing your own login or password in Settings signs out other devices only.
+- Management notifications reach only active owners of the same shop. Realtime actions: `create`, `update`, `deactivate`, `reactivate`.
+- Demo seeding no longer uses the evolving `User` model, so seeded demo accounts exist without a shop and cannot sign in until `khata:install` attaches and locks them.
 
 ## Phase 2C — Shop Settings And App Shell (Proposed)
 
@@ -73,7 +78,7 @@ Approved by the owner on 16 Oct 2026 unless marked open.
 | #   | Decision                                                                                                  | Applied in                                       |
 | --- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | D1  | Staff manage customers and khata operations; no shop-wide reports or owner settings                       | Architecture §6.4                                |
-| D2  | Owner and Staff roles are required                                                                        | 2B labels                                        |
+| D2  | Owner and Staff roles are required                                                                        | 2B ✓                                             |
 | D3  | Exact paisa storage; whole-rupee display, non-zero paisa always shown                                     | Architecture §6.1, L32                           |
 | D4  | Reversals effective at the original's date, original kept, actual recording time kept, no silent rewrites | L53, L64, Ledger rules §3                        |
 | D5  | Owner-only `adjustment` type                                                                              | L45                                              |
@@ -85,7 +90,7 @@ Approved by the owner on 16 Oct 2026 unless marked open.
 | D11 | Email-format login names; no outbound email                                                               | 2A ✓                                             |
 | D12 | Email forgot-password removed; offline reset command                                                      | 2A ✓                                             |
 | D13 | No customer credit limits in V1                                                                           | L46                                              |
-| D14 | Configurable inactivity timeout, not a hard-coded 12 hours                                                | 2B, open default O1                              |
+| D14 | Configurable inactivity timeout, not a hard-coded 12 hours: 30 idle minutes (`SESSION_LIFETIME`)          | 2B ✓                                             |
 | S1  | No balance cache, subject to accuracy and performance tests                                               | Database §5, L60–L61                             |
 | S2  | Receipt number = entry id; generated customer codes from id                                               | Database                                         |
 | S3  | No triggers; immutability guarantees documented and tested on MySQL                                       | Database §4                                      |
@@ -95,13 +100,14 @@ Approved by the owner on 16 Oct 2026 unless marked open.
 | —   | `activity_logs` moves to Phase 3; the `audit` log channel covers 2A/2B changes                            | Database                                         |
 | —   | Documentation fixes I1–I5                                                                                 | Vision W1, W2, W9; Architecture §2; this roadmap |
 | —   | Demo accounts are locked, never deleted                                                                   | 2A ✓                                             |
+| —   | Remember Me removed, because it conflicts with an unattended counter (owner direction for 2B)             | 2B ✓                                             |
+| —   | Strong passwords: at least 10 characters with letters and numbers, app-wide (owner direction for 2B)      | 2B ✓                                             |
+| —   | Accounts are deactivated, never deleted; a shop always keeps one active owner                             | 2B ✓                                             |
 
 ### Open Decisions
 
-| #   | Question                                                                                                                                          | Proposal                                                                     | Needed by |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------- |
-| O1  | Idle timeout default for the counter PC, and keep "Remember me"?                                                                                  | 30 idle minutes; remove "Remember me" so an unattended screen always expires | 2B        |
-| O2  | May staff print a single customer's statement (not shop-wide reports)?                                                                            | Yes; it is part of serving that customer                                     | 7         |
-| O3  | Root `/`: keep the starter marketing page or redirect to the dashboard/login?                                                                     | Redirect; the marketing page has no purpose in a private shop app            | 2C        |
-| O4  | Confirm the reading of D4: corrected view by default, a corrections notice on affected periods, and an "as recorded at" view (§3 of Ledger rules) | As written                                                                   | 4         |
-| O5  | Stronger password rule than `Password::defaults()` (8+ characters) for all accounts?                                                              | 10+ characters with letters and numbers, applied app-wide in 2B              | 2B        |
+| #   | Question                                                                                                                                          | Proposal                                                          | Needed by |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------- |
+| O2  | May staff print a single customer's statement (not shop-wide reports)?                                                                            | Yes; it is part of serving that customer                          | 7         |
+| O3  | Root `/`: keep the starter marketing page or redirect to the dashboard/login?                                                                     | Redirect; the marketing page has no purpose in a private shop app | 2C        |
+| O4  | Confirm the reading of D4: corrected view by default, a corrections notice on affected periods, and an "as recorded at" view (§3 of Ledger rules) | As written                                                        | 4         |

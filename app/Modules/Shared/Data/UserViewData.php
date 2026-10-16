@@ -36,11 +36,15 @@ final class UserViewData extends Data
 
         #[Rule(['nullable', 'date'])]
         public ?CarbonImmutable $email_verified_at = null,
+
+        #[Rule(['nullable', 'date'])]
+        public ?CarbonImmutable $deactivated_at = null,
     ) {}
 
     public static function fromModel(User $user): self
     {
         $emailVerifiedAt = $user->email_verified_at;
+        $deactivatedAt = $user->deactivated_at;
 
         return new self(
             id: $user->id,
@@ -50,6 +54,7 @@ final class UserViewData extends Data
             created_at: CarbonImmutable::parse($user->created_at),
             updated_at: CarbonImmutable::parse($user->updated_at),
             email_verified_at: $emailVerifiedAt === null ? null : CarbonImmutable::instance($emailVerifiedAt),
+            deactivated_at: $deactivatedAt === null ? null : CarbonImmutable::instance($deactivatedAt),
         );
     }
 }

@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../wayfinder'
 /**
 * @see \App\Modules\Settings\Http\Controllers\ProfileController::edit
-* @see app/Modules/Settings/Http/Controllers/ProfileController.php:26
+* @see app/Modules/Settings/Http/Controllers/ProfileController.php:28
 * @route '/app/settings/profile'
 */
 export const edit = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ edit.definition = {
 
 /**
 * @see \App\Modules\Settings\Http\Controllers\ProfileController::edit
-* @see app/Modules/Settings/Http/Controllers/ProfileController.php:26
+* @see app/Modules/Settings/Http/Controllers/ProfileController.php:28
 * @route '/app/settings/profile'
 */
 edit.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ edit.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Modules\Settings\Http\Controllers\ProfileController::edit
-* @see app/Modules/Settings/Http/Controllers/ProfileController.php:26
+* @see app/Modules/Settings/Http/Controllers/ProfileController.php:28
 * @route '/app/settings/profile'
 */
 edit.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ edit.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Modules\Settings\Http\Controllers\ProfileController::edit
-* @see app/Modules/Settings/Http/Controllers/ProfileController.php:26
+* @see app/Modules/Settings/Http/Controllers/ProfileController.php:28
 * @route '/app/settings/profile'
 */
 edit.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +45,7 @@ edit.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Modules\Settings\Http\Controllers\ProfileController::update
-* @see app/Modules/Settings/Http/Controllers/ProfileController.php:42
+* @see app/Modules/Settings/Http/Controllers/ProfileController.php:44
 * @route '/app/settings/profile'
 */
 export const update = (options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -60,7 +60,7 @@ update.definition = {
 
 /**
 * @see \App\Modules\Settings\Http\Controllers\ProfileController::update
-* @see app/Modules/Settings/Http/Controllers/ProfileController.php:42
+* @see app/Modules/Settings/Http/Controllers/ProfileController.php:44
 * @route '/app/settings/profile'
 */
 update.url = (options?: RouteQueryOptions) => {
@@ -69,7 +69,7 @@ update.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Modules\Settings\Http\Controllers\ProfileController::update
-* @see app/Modules/Settings/Http/Controllers/ProfileController.php:42
+* @see app/Modules/Settings/Http/Controllers/ProfileController.php:44
 * @route '/app/settings/profile'
 */
 update.patch = (options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -77,44 +77,9 @@ update.patch = (options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
     method: 'patch',
 })
 
-/**
-* @see \App\Modules\Settings\Http\Controllers\ProfileController::destroy
-* @see app/Modules/Settings/Http/Controllers/ProfileController.php:60
-* @route '/app/settings/profile'
-*/
-export const destroy = (options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
-    url: destroy.url(options),
-    method: 'delete',
-})
-
-destroy.definition = {
-    methods: ["delete"],
-    url: '/app/settings/profile',
-} satisfies RouteDefinition<["delete"]>
-
-/**
-* @see \App\Modules\Settings\Http\Controllers\ProfileController::destroy
-* @see app/Modules/Settings/Http/Controllers/ProfileController.php:60
-* @route '/app/settings/profile'
-*/
-destroy.url = (options?: RouteQueryOptions) => {
-    return destroy.definition.url + queryParams(options)
-}
-
-/**
-* @see \App\Modules\Settings\Http\Controllers\ProfileController::destroy
-* @see app/Modules/Settings/Http/Controllers/ProfileController.php:60
-* @route '/app/settings/profile'
-*/
-destroy.delete = (options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
-    url: destroy.url(options),
-    method: 'delete',
-})
-
 const profile = {
     edit: Object.assign(edit, edit),
     update: Object.assign(update, update),
-    destroy: Object.assign(destroy, destroy),
 }
 
 export default profile

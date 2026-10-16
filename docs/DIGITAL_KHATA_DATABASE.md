@@ -1,6 +1,6 @@
 # Digital Khata — Database Design
 
-Status: `shops` and `users.shop_id` are **implemented (Phase 2A)**. Everything else is an approved proposal for its phase. The target is MySQL 8.0.46 (the local server), InnoDB, `utf8mb4_unicode_ci`, strict mode. Migrations use Laravel's schema builder. CHECK constraints the builder cannot express are added with driver-specific `DB::statement` calls.
+Status: `shops`, `users.shop_id` (Phase 2A), and `users.deactivated_at` (Phase 2B) are **implemented**. Everything else is an approved proposal for its phase. The target is MySQL 8.0.46 (the local server), InnoDB, `utf8mb4_unicode_ci`, strict mode. Migrations use Laravel's schema builder. CHECK constraints the builder cannot express are added with driver-specific `DB::statement` calls.
 
 Rules referenced as `L…` are defined in [Ledger rules](DIGITAL_KHATA_LEDGER_RULES.md).
 
@@ -46,12 +46,12 @@ The currency is fixed at PKR and is not stored. `khata:install` refuses to creat
 
 ### `users` — Additions
 
-| Column           | Type                                                  | Phase | Notes                                                                                                                      |
-| ---------------- | ----------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------- |
-| `shop_id`        | BIGINT UNSIGNED NULL, FK `shops` `ON DELETE RESTRICT` | 2A ✓  | Migration `2026_10_16_000002_add_shop_id_to_users_table`. `khata:install` sets it for the owner and every existing account |
-| `deactivated_at` | TIMESTAMP NULL                                        | 2B    | Deactivated users cannot log in; history stays attributable                                                                |
+| Column           | Type                                                  | Phase | Notes                                                                                                                                                     |
+| ---------------- | ----------------------------------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `shop_id`        | BIGINT UNSIGNED NULL, FK `shops` `ON DELETE RESTRICT` | 2A ✓  | Migration `2026_10_16_000002_add_shop_id_to_users_table`. `khata:install` sets it for the owner and every existing account                                |
+| `deactivated_at` | TIMESTAMP NULL                                        | 2B ✓  | Migration `2026_10_17_000001_add_deactivated_at_to_users_table`. Deactivated users cannot sign in; history stays attributable; accounts are never deleted |
 
-Users created through the Users screen before Phase 2B receive `shop_id = NULL`. Phase 2B assigns the creating owner's shop and makes the column required in application validation.
+Since Phase 2B every account created on the Staff screen gets the creating owner's `shop_id` (client input is ignored), and an account without a shop cannot sign in. The column stays nullable only because demo seeding and pre-installation accounts exist before `khata:install` creates the shop.
 
 ### `customers` (Phase 3)
 
@@ -212,7 +212,7 @@ Every money-changing request is one `DB::transaction(…, attempts: 3)` that fir
 | Phase | Migrations                                                                             |
 | ----- | -------------------------------------------------------------------------------------- |
 | 2A ✓  | `2026_10_16_000001_create_shops_table`, `2026_10_16_000002_add_shop_id_to_users_table` |
-| 2B    | `add_deactivated_at_to_users_table`                                                    |
+| 2B ✓  | `2026_10_17_000001_add_deactivated_at_to_users_table`                                  |
 | 3     | `create_customers_table`, `create_activity_logs_table`                                 |
 | 4     | `create_ledger_entries_table` (+ CHECKs)                                               |
 | 5     | `create_ledger_entry_items_table` (+ CHECKs)                                           |

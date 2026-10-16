@@ -18,7 +18,9 @@ final class SendUserManagementBroadcastNotification
         /** @var User $actor */
         $actor = $mutationContext->actor;
         $admins = User::query()
+            ->where('shop_id', $actor->shop_id)
             ->where('role', UserRole::Admin)
+            ->whereNull('deactivated_at')
             ->whereKeyNot($actor->id)
             ->get();
 
