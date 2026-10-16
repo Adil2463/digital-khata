@@ -29,9 +29,12 @@ export type CursorPaginator<TKey, TValue> = {
     }
 }
 export type CursorPaginatorInterface<TKey, TValue> = CursorPaginator<TKey, TValue>
+export type DashboardPageData = {
+    shopTime: string
+}
 export type InstallShopData = {
     shopName: string
-    timezone: string
+    timezone: ShopTimezone
     ownerName: string
     ownerEmail: string
     ownerPassword: string
@@ -106,6 +109,7 @@ export type SharedPageData = {
     name: string
     quote: SharedQuoteData
     auth: SharedAuthData
+    shop: SharedShopData | null
     flash: SharedFlashData
     location: string
     sidebarOpen: boolean
@@ -117,6 +121,26 @@ export type SharedQuoteData = {
 }
 export enum SharedRealtimeChannel {
     UserNotifications = 'users.{userId}.notifications'
+}
+export type SharedShopData = {
+    name: string
+    timezone: ShopTimezone
+}
+export type ShopSettingsPageData = {
+    settings: ShopSettingsUpdateData
+    timezone: ShopTimezone
+    timezoneLabel: string
+    shopTime: string
+    updatedAt: string | null
+}
+export type ShopSettingsUpdateData = {
+    name: string
+    phone: string | null
+    address: string | null
+    receipt_footer: string | null
+}
+export enum ShopTimezone {
+    AsiaKarachi = 'Asia/Karachi'
 }
 export enum SortDirection {
     Asc = 'asc',

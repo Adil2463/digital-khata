@@ -6,6 +6,7 @@ use App\Http\Middleware\EnsureAccountCanSignIn;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SecurityHeaders;
+use App\Modules\Shared\Auth\SessionEndNotice;
 use App\Modules\Shared\Support\ModuleRegistry;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Foundation\Application;
@@ -64,7 +65,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             if ($request->user() === null) {
                 return redirect()->route('auth.login.create')
-                    ->with('status', 'Your session expired after a period of inactivity. Please log in again.');
+                    ->with('status', SessionEndNotice::EXPIRED_MESSAGE);
             }
 
             return back()->with('error', 'This page expired. Please try again.');

@@ -26,7 +26,7 @@
         <UiDropdownMenuItem :as-child="true">
             <Link class="block w-full" :href="settingsProfileHref" prefetch as="button">
                 <IconLucideSettings class="mr-2 size-4" />
-                Settings
+                My account
             </Link>
         </UiDropdownMenuItem>
     </UiDropdownMenuGroup>

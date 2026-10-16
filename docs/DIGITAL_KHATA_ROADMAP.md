@@ -6,8 +6,8 @@ Delivery happens in phases. Each phase (and each Phase 2 part) starts only after
 | --- | ------------------------------------------ | ----------------------------- |
 | 1   | Foundation and Architecture                | Complete, approved            |
 | 2A  | Shop foundation and secure installation    | Complete, approved            |
-| 2B  | Owner and staff management                 | Implemented — awaiting review |
-| 2C  | Shop settings and app shell                | Proposed (below)              |
+| 2B  | Owner and staff management                 | Complete, approved            |
+| 2C  | Shop settings and app shell                | Implemented — awaiting review |
 | 3   | Customer Management                        | Not started                   |
 | 4   | Financial Ledger Engine                    | Not started                   |
 | 5   | Quick and Detailed Udhaar                  | Not started                   |
@@ -28,7 +28,7 @@ Delivery happens in phases. Each phase (and each Phase 2 part) starts only after
 
 Known limits at the end of 2A were resolved in 2B.
 
-## Phase 2B — Owner And Staff Management (Implemented)
+## Phase 2B — Owner And Staff Management (Complete)
 
 - `users.deactivated_at` (migration `2026_10_17_000001_add_deactivated_at_to_users_table`). An account can sign in only when it belongs to a shop and is not deactivated (`User::canSignIn()`).
 - Staff screen (`/app/admin/users`, owner-only): add staff or another owner, edit name, login, role, or password, deactivate, reactivate. There is no deletion anywhere (web, API, or Settings).
@@ -43,13 +43,18 @@ Known limits at the end of 2A were resolved in 2B.
 - Management notifications reach only active owners of the same shop. Realtime actions: `create`, `update`, `deactivate`, `reactivate`.
 - Demo seeding no longer uses the evolving `User` model, so seeded demo accounts exist without a shop and cannot sign in until `khata:install` attaches and locks them.
 
-## Phase 2C — Shop Settings And App Shell (Proposed)
+## Phase 2C — Shop Settings And App Shell (Implemented)
 
-1. `CurrentShop` resolver, `ShopClock::today()`, `SharedShopData` page prop (shop name for authenticated users).
-2. Owner-only shop settings page (`GET|PUT /app/shop/settings`, `manage-shop` gate): name, phone, address, receipt footer, timezone.
-3. Header and page titles show the shop name; login branding shows Digital Khata.
-4. Root `/` behaviour (decision O3).
-5. Tests and docs.
+No migration: the `shops` columns from 2A already hold every setting.
+
+- **Shop Settings** (`/app/shop/settings`, owner only through the `manage-shop` gate): shop name (required, ≤ 120), contact phone (optional; digits with single spaces or dashes, optional leading `+`, 7–20 characters), address and receipt footer (optional, ≤ 255). Text is trimmed and runs of whitespace collapse to one space. Saving shows a toast and writes changed fields to the `audit` log (`audit.shop_settings_updated`). There is no shop deletion.
+- The shop always comes from the signed-in owner (`CurrentShop`); the URL carries no shop id and a client-sent `shop_id` or `timezone` is ignored. Staff get 403; deactivated or shop-less accounts are signed out by the 2B middleware first.
+- **Timezone:** `ShopTimezone` enum with `Asia/Karachi` only (owner decision, 17 Oct 2026). Shown read-only on Shop Settings; `khata:install --timezone` now rejects anything else; the model cast rejects an unsupported stored value.
+- **Business time:** timestamps stay UTC. `ShopClock::now/today/local` convert in the shop timezone, independent of the server and PHP default timezones; the Pakistan day starts at 19:00 UTC. `resources/js/lib/datetime.ts` formats in the shop timezone for display. The dashboard and Shop Settings show today's business date.
+- **App shell:** `SharedShopData` shares the shop name and timezone. The sidebar shows "Digital Khata" with the shop name; the mobile header shows the shop name; the login page shows the Digital Khata brand. The sidebar has a "Menu" group (Dashboard) for everyone and a "Manage shop" group (Staff, Shop settings) for owners; the footer has "My account" and "Password".
+- **Root `/`** (decision O3): guests go to login, signed-in owners and staff go to the dashboard. The starter-kit marketing page was removed.
+- **Session UX:** logout lands on login with "You have logged out." After an idle timeout or revoked session, the next visit to login says "Your session has expired. Please log in again." (link clicks as well as form submits). Error pages (403, 404, 419, …) now carry the CSP nonce and a "Back to Digital Khata" link.
+- `APP_NAME` in `.env.example` is "Digital Khata".
 
 ## Later Phases
 
@@ -103,11 +108,12 @@ Approved by the owner on 16 Oct 2026 unless marked open.
 | —   | Remember Me removed, because it conflicts with an unattended counter (owner direction for 2B)             | 2B ✓                                             |
 | —   | Strong passwords: at least 10 characters with letters and numbers, app-wide (owner direction for 2B)      | 2B ✓                                             |
 | —   | Accounts are deactivated, never deleted; a shop always keeps one active owner                             | 2B ✓                                             |
+| O3  | Root `/` redirects: guests to login, signed-in accounts to the dashboard; no public landing page          | 2C ✓                                             |
+| —   | V1 supports only the `Asia/Karachi` business timezone, shown read-only (owner decision for 2C)            | 2C ✓                                             |
 
 ### Open Decisions
 
-| #   | Question                                                                                                                                          | Proposal                                                          | Needed by |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------- |
-| O2  | May staff print a single customer's statement (not shop-wide reports)?                                                                            | Yes; it is part of serving that customer                          | 7         |
-| O3  | Root `/`: keep the starter marketing page or redirect to the dashboard/login?                                                                     | Redirect; the marketing page has no purpose in a private shop app | 2C        |
-| O4  | Confirm the reading of D4: corrected view by default, a corrections notice on affected periods, and an "as recorded at" view (§3 of Ledger rules) | As written                                                        | 4         |
+| #   | Question                                                                                                                                          | Proposal                                 | Needed by |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | --------- |
+| O2  | May staff print a single customer's statement (not shop-wide reports)?                                                                            | Yes; it is part of serving that customer | 7         |
+| O4  | Confirm the reading of D4: corrected view by default, a corrections notice on affected periods, and an "as recorded at" view (§3 of Ledger rules) | As written                               | 4         |

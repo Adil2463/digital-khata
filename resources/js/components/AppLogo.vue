@@ -1,8 +1,13 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+    const shop = useCurrentShop()
+</script>
 
 <template>
-    <Icon-icon-park-outline:system class="size-6 fill-current" />
-    <div class="ml-1 grid flex-1 text-left text-sm">
-        <span class="mb-0.5 truncate leading-tight font-semibold">laravel-starter-kit</span>
+    <div class="flex aspect-square size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+        <AppLogoIcon class="size-5" />
+    </div>
+    <div class="ml-1 grid min-w-0 flex-1 text-left text-sm">
+        <span class="truncate leading-tight font-semibold">Digital Khata</span>
+        <span v-if="shop" class="truncate text-xs leading-tight text-muted-foreground">{{ shop.name }}</span>
     </div>
 </template>

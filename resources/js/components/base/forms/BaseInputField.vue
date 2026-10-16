@@ -78,7 +78,7 @@
         :hide-label="props.field.type === 'checkbox'"
     >
         <UiInput
-            v-if="['text', 'email', 'password'].includes(props.field.type)"
+            v-if="['text', 'email', 'password', 'tel'].includes(props.field.type)"
             v-bind="controlAttributes"
             :id="props.id"
             :type="props.field.type"

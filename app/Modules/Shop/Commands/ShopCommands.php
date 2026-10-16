@@ -9,6 +9,7 @@ use App\Models\Shop;
 use App\Models\User;
 use App\Modules\Shared\Auth\CredentialRotator;
 use App\Modules\Shop\Data\InstallShopData;
+use App\Modules\Shop\Data\ShopSettingsUpdateData;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -78,5 +79,35 @@ final readonly class ShopCommands
         ]);
 
         return $shopInstallationResult;
+    }
+
+    public function updateSettings(Shop $shop, ShopSettingsUpdateData $shopSettingsUpdateData, User $user): Shop
+    {
+        $shop->fill([
+            'name' => $shopSettingsUpdateData->name,
+            'phone' => $shopSettingsUpdateData->phone,
+            'address' => $shopSettingsUpdateData->address,
+            'receipt_footer' => $shopSettingsUpdateData->receipt_footer,
+        ]);
+
+        $changes = [];
+
+        foreach (array_keys($shop->getDirty()) as $field) {
+            $changes[$field] = ['before' => $shop->getOriginal($field), 'after' => $shop->getAttribute($field)];
+        }
+
+        if ($changes === []) {
+            return $shop;
+        }
+
+        $shop->save();
+
+        Log::channel('audit')->info('audit.shop_settings_updated', [
+            'shop_id' => $shop->id,
+            'actor_id' => $user->id,
+            'changes' => $changes,
+        ]);
+
+        return $shop;
     }
 }

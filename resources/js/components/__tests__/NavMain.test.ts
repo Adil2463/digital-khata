@@ -28,7 +28,7 @@ describe('NavMain', () => {
                 components: { NavMain, SidebarProvider },
                 template: `
                     <SidebarProvider>
-                        <NavMain :items="items" />
+                        <NavMain title="Menu" :items="items" />
                     </SidebarProvider>
                 `,
                 data: () => ({
@@ -54,6 +54,8 @@ describe('NavMain', () => {
                 }
             }
         )
+
+        expect(wrapper.text()).toContain('Menu')
 
         const links = wrapper.findAll('a')
 

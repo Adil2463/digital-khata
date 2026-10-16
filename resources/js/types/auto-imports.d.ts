@@ -18,6 +18,7 @@ declare global {
   const buildSettingsAppearanceBreadcrumbs: typeof import('@/config/breadcrumbs').buildSettingsAppearanceBreadcrumbs
   const buildSettingsPasswordBreadcrumbs: typeof import('@/config/breadcrumbs').buildSettingsPasswordBreadcrumbs
   const buildSettingsProfileBreadcrumbs: typeof import('@/config/breadcrumbs').buildSettingsProfileBreadcrumbs
+  const buildShopSettingsBreadcrumbs: typeof import('@/config/breadcrumbs').buildShopSettingsBreadcrumbs
   const buildUsersBreadcrumbs: typeof import('@/config/breadcrumbs').buildUsersBreadcrumbs
   const buttonStyles: typeof import('../lib/theme').buttonStyles
   const capitalize: typeof import('../lib/utils').capitalize
@@ -35,6 +36,8 @@ declare global {
   const disconnectRealtime: typeof import('../lib/realtime/config').disconnectRealtime
   const effectScope: typeof import('vue').effectScope
   const formatDate: typeof import('../lib/utils').formatDate
+  const formatShopDate: typeof import('../lib/datetime').formatShopDate
+  const formatShopDateTime: typeof import('../lib/datetime').formatShopDateTime
   const getApiQueryCacheData: typeof import('../composables/useApiQuery').getApiQueryCacheData
   const getCurrentInstance: typeof import('vue').getCurrentInstance
   const getCurrentScope: typeof import('vue').getCurrentScope
@@ -105,6 +108,7 @@ declare global {
   const useAuthUser: typeof import('../composables/useAppPage').useAuthUser
   const useCssModule: typeof import('vue').useCssModule
   const useCssVars: typeof import('vue').useCssVars
+  const useCurrentShop: typeof import('../composables/useAppPage').useCurrentShop
   const useFlashToasts: typeof import('../composables/useFlashToasts').useFlashToasts
   const useForm: typeof import('@inertiajs/vue3').useForm
   const useForwardedProps: typeof import('../lib/forward-props').useForwardedProps
@@ -155,6 +159,9 @@ declare global {
   export type { ResourceSubmitOptions } from '../composables/useResourceForm'
   import('../composables/useResourceForm')
   // @ts-ignore
+  export type { ShopDateFormatOptions } from '../lib/datetime'
+  import('../lib/datetime')
+  // @ts-ignore
   export type { FormErrorMap, FormContract, FormValuesFromData } from '../lib/forms'
   import('../lib/forms')
   // @ts-ignore
@@ -189,6 +196,7 @@ declare module 'vue' {
     readonly buildSettingsAppearanceBreadcrumbs: UnwrapRef<typeof import('@/config/breadcrumbs')['buildSettingsAppearanceBreadcrumbs']>
     readonly buildSettingsPasswordBreadcrumbs: UnwrapRef<typeof import('@/config/breadcrumbs')['buildSettingsPasswordBreadcrumbs']>
     readonly buildSettingsProfileBreadcrumbs: UnwrapRef<typeof import('@/config/breadcrumbs')['buildSettingsProfileBreadcrumbs']>
+    readonly buildShopSettingsBreadcrumbs: UnwrapRef<typeof import('@/config/breadcrumbs')['buildShopSettingsBreadcrumbs']>
     readonly buildUsersBreadcrumbs: UnwrapRef<typeof import('@/config/breadcrumbs')['buildUsersBreadcrumbs']>
     readonly buttonStyles: UnwrapRef<typeof import('../lib/theme')['buttonStyles']>
     readonly capitalize: UnwrapRef<typeof import('../lib/utils')['capitalize']>
@@ -206,6 +214,8 @@ declare module 'vue' {
     readonly disconnectRealtime: UnwrapRef<typeof import('../lib/realtime/config')['disconnectRealtime']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly formatDate: UnwrapRef<typeof import('../lib/utils')['formatDate']>
+    readonly formatShopDate: UnwrapRef<typeof import('../lib/datetime')['formatShopDate']>
+    readonly formatShopDateTime: UnwrapRef<typeof import('../lib/datetime')['formatShopDateTime']>
     readonly getApiQueryCacheData: UnwrapRef<typeof import('../composables/useApiQuery')['getApiQueryCacheData']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
@@ -276,6 +286,7 @@ declare module 'vue' {
     readonly useAuthUser: UnwrapRef<typeof import('../composables/useAppPage')['useAuthUser']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
+    readonly useCurrentShop: UnwrapRef<typeof import('../composables/useAppPage')['useCurrentShop']>
     readonly useFlashToasts: UnwrapRef<typeof import('../composables/useFlashToasts')['useFlashToasts']>
     readonly useForm: UnwrapRef<typeof import('@inertiajs/vue3')['useForm']>
     readonly useForwardedProps: UnwrapRef<typeof import('../lib/forward-props')['useForwardedProps']>

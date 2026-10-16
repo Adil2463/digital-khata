@@ -12,6 +12,8 @@ export const buildDashboardBreadcrumbs = (): BreadcrumbItem[] => toSingleBreadcr
 
 export const buildUsersBreadcrumbs = (): BreadcrumbItem[] => toSingleBreadcrumb('Staff', appRoutes.admin.users.index.url())
 
+export const buildShopSettingsBreadcrumbs = (): BreadcrumbItem[] => toSingleBreadcrumb('Shop settings', appRoutes.shop.settings.edit.url())
+
 export const buildSettingsProfileBreadcrumbs = (): BreadcrumbItem[] => toSingleBreadcrumb('Profile settings', appRoutes.settings.profile.edit.url())
 
 export const buildSettingsPasswordBreadcrumbs = (): BreadcrumbItem[] =>

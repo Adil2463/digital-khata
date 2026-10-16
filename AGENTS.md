@@ -234,9 +234,9 @@ For every non-trivial change, explicitly verify all affected layers before consi
 
 - Module root: `app/Modules`
 - Current modules:
-    - `Marketing` - Public marketing pages
+    - `Marketing` - The root `/` redirect (guests to login, signed-in accounts to the dashboard) plus the public page header/footer used by generated public pages; Digital Khata has no public landing page
     - `Auth` - Authentication (login, logout, password confirmation, email verification) and the offline `khata:user:reset-password` command
-    - `Shop` - Digital Khata shop record and the one-time `khata:install` command
+    - `Shop` - Digital Khata shop record, the one-time `khata:install` command, and the owner-only Shop Settings page (`manage-shop` gate)
     - `Dashboard` - Authenticated app dashboard
     - `Settings` - User settings (profile, password, appearance)
     - `Users` - Owner-managed owner and staff accounts (create, edit, deactivate, reactivate) with realtime
@@ -246,6 +246,7 @@ For every non-trivial change, explicitly verify all affected layers before consi
     - `app/Models/User.php`
     - `app/Models/Shop.php`
     - `app/Enums/UserRole.php`
+    - `app/Enums/ShopTimezone.php`
 - Domain models live in `app/Models` even when one module owns their writes: `ModuleRegistry` maps a module's `FooPolicy` only to `App\Models\Foo`.
 - `bootstrap/app.php` loads console commands only from `app/Modules/Shared/Console/Commands`. A module's own commands are registered by its auto-discovered `Providers/ModuleServiceProvider.php` inside `runningInConsole()`; see the `Shop` and `Auth` providers.
 
@@ -257,10 +258,21 @@ For every non-trivial change, explicitly verify all affected layers before consi
 - An account can sign in only when `User::canSignIn()`: it belongs to a shop and `deactivated_at` is null. `LoginRequest` refuses other accounts (the specific message appears only after the password is verified), and `App\Http\Middleware\EnsureAccountCanSignIn` re-checks every authenticated web and API request, logging the session out and throwing `AuthenticationException`. Deactivation therefore takes effect on the next request whatever the session driver.
 - Accounts are never deleted: there is no self-deletion and no admin deletion. Owners deactivate and reactivate accounts of their own shop. `UserPolicy` authorizes (owner, same shop, 404 across shops, no self-deactivation); `UserCommands` enforces invariants under row locks: an owner cannot demote or deactivate themself, and a shop always keeps one active owner.
 - Owner-created and owner-edited accounts are verified (`email_verified_at` set): no email is ever delivered, so the owner vouches instead. Changing an email no longer clears verification.
-- There is no Remember Me. Sessions expire after `SESSION_LIFETIME` idle minutes (default `30`, pinned in `phpunit.xml`). An expired session that submits a form (CSRF 419) is redirected to login with a message by the handler in `bootstrap/app.php`.
+- There is no Remember Me. Sessions expire after `SESSION_LIFETIME` idle minutes (default `30`, pinned in `phpunit.xml`); no frontend timer duplicates it. An expired session that submits a form (CSRF 419) is redirected to login with `SessionEndNotice::EXPIRED_MESSAGE` by the handler in `bootstrap/app.php`.
+- `App\Modules\Shared\Auth\SessionEndNotice` explains sessions that ended without a logout. Login queues a 30-day `khata_signed_in` marker cookie that grants no access; logout clears it and lands directly on login with "You have logged out." (an intermediate redirect would consume Inertia's one-time history-clear flag). When a guest reaches the login page with the marker still set, its session expired or was revoked, so the page shows the expiry notice once and clears the marker. A status already flashed (such as the deactivation message) takes precedence.
 - `Password::defaults()` is set in `AppServiceProvider` to at least 10 characters with letters and numbers, offline (no `uncompromised()`), and applies to every password form and command.
 - `App\Modules\Shared\Auth\DemoAccounts` owns the starter kit's published demo credentials. The users migration seeds them only when `APP_SEED_USERS=true` (default `false`, pinned `false` in `phpunit.xml`) and never in production. `khata:install` detects accounts still accepting those passwords and, after confirmation, locks them with `CredentialRotator::lock()`; it never deletes them. Declining cancels installation without changes.
 - `users.shop_id` is nullable until `khata:install` attaches every pre-existing account to the new shop; the shop row is `RESTRICT`-protected while users reference it.
+- `GET /` (`marketing.home`) redirects guests to `auth.login.create` and signed-in accounts to `app.dashboard`. `EnsureAccountCanSignIn` runs first, so a deactivated or shop-less account is signed out instead of redirected inside.
+
+### Shop Context And Business Time
+
+- `App\Modules\Shared\Shop\CurrentShop::of($user)` is the only way a request resolves its shop: always from the authenticated account, never from request input. A missing shop throws `AuthorizationException`. Shop-owned routes therefore carry no shop id, and requests accept only their own validated fields, so a client-sent `shop_id` is ignored.
+- `App\Enums\ShopTimezone` lists the supported business timezones; V1 has only `Asia/Karachi` (`ShopTimezone::DEFAULT`). `Shop::$timezone` is cast to it, so an unsupported stored value throws instead of misdating entries. `khata:install` validates against the enum, and Shop Settings shows the timezone read-only. Adding a timezone means adding an enum case.
+- Timestamps stay UTC (`config/app.php`). `App\Modules\Shared\Shop\ShopClock` (`now`, `today`, `local`) converts with the shop timezone named explicitly, so neither PHP's default timezone nor the server's changes which business day an instant falls on. Pakistan's day starts at 19:00 UTC. Ledger dates (`entry_date`, L21/L22) must come from `ShopClock::today()`.
+- `config/data.php` serializes dates as `Y-m-d`. A DTO field that carries an instant uses `#[WithTransformer(DateTimeInterfaceTransformer::class, format: DATE_ATOM)]` and is emitted in UTC. Pages that show "now" receive it from the server (`shopTime`), so the SSR render and hydration agree.
+- `resources/js/lib/datetime.ts` (`formatShopDate`, `formatShopDateTime`) is the single frontend formatter. Every call names the shop timezone, taken from the shared `shop.timezone` prop or a page prop, and strings are assembled from `formatToParts` so ICU separator differences between Node and browsers cannot cause hydration mismatches. Never format business dates with the browser's local timezone.
+- `SharedShopData` (`shop: {name, timezone} | null`) is shared on every Inertia response for signed-in accounts; `useCurrentShop()` reads it. The sidebar logo and the mobile header show the shop name, so a rename appears on the next response.
 
 ### Backend Ownership Rules
 
@@ -382,7 +394,7 @@ When adding similar behavior, inspect and follow the nearest established referen
 - The root Blade template uses `data-inertia` (not `inertia`) on head elements, per Inertia v3.
 - `resources/css/app.css` is a Vite entry of its own (`vite.config.ts` `input`, first in the `@vite` array) and must never be imported from `app.ts`. SSR ships a fully rendered document, so the browser paints as soon as the HTML lands; CSS reaching it through the JS module graph would render that markup unstyled and reflow when the bundle evaluated. As a separate entry it is a render-blocking `<link rel="stylesheet">` in dev and production alike — the Vite dev server serves it as real `text/css` because a `<link>` sends `Accept: text/css`.
 - The color scheme is server-rendered. `HandleAppearance` normalizes the `appearance` cookie through `App\Enums\Appearance` and shares it with the root view, which puts `class="dark"` on `<html>` directly; there is no boot script and nothing for the client to re-apply. `HandleInertiaRequests` shares the same value as a page prop so `useAppearance` seeds the appearance UI from it and hydrates without a mismatch. `useAppearance` holds only a client override (`null` until the visitor toggles), which is what keeps this module-level state out of the shared SSR process.
-- Nothing that renders into markup may be nondeterministic. `Math.random()`, `Date.now()`, and `crypto.randomUUID()` produce one value in the SSR process and a different one during hydration, so Vue reports a mismatch and the server's value is the one that stays in the DOM. Use `useId()` for generated element ids and `url(#…)` references (`PlaceholderPattern`, `SidebarMenuSkeleton`); it is stable across both renders. This applies to vendored `components/ui/**` primitives too — upstream shadcn-vue does not assume SSR.
+- Nothing that renders into markup may be nondeterministic. `Math.random()`, `Date.now()`, and `crypto.randomUUID()` produce one value in the SSR process and a different one during hydration, so Vue reports a mismatch and the server's value is the one that stays in the DOM. Use `useId()` for generated element ids and `url(#…)` references (`SidebarMenuSkeleton`); it is stable across both renders. This applies to vendored `components/ui/**` primitives too — upstream shadcn-vue does not assume SSR.
 - `SecurityHeaders` allows the `http:`/`https:` scheme sources in `style-src` and `font-src` only when `App::isLocal()`, because the dev stylesheet and fonts are served by the Vite dev server origin rather than `'self'`. Outside local, every asset, fonts included, is same-origin and `<style>` elements require the nonce. `style-src-attr 'unsafe-inline'` applies everywhere: Vue renders `v-show` and bound styles (such as the sidebar's width variables) as `style` attributes in server-rendered markup, a nonce cannot cover an attribute, and attributes cannot execute script.
 - Fonts are self-hosted through laravel-vite-plugin's `fonts` option in `vite.config.ts`, which is the only place a font family is declared. Instrument Sans ships as one variable latin woff2 (weights 400–700) read from the locked `@fontsource-variable/instrument-sans` package, so builds need no network. `@fonts` in the root view preloads it (also sent as an HTTP `Link` header) and inlines the `@font-face` rules under the CSP nonce. The optional `fontaine` peer generates a metric-matched `Instrument Sans fallback` face so text does not shift when the font arrives. `theme.css` maps Tailwind's `--font-sans` to the generated `--font-instrument-sans` variable, which already carries the fallback stack. To add a family, add a definition there and reference its variable from `theme.css`; never link a third-party font stylesheet.
 - Feature pages live in `resources/js/modules/**/pages`.
@@ -473,6 +485,7 @@ When adding similar behavior, inspect and follow the nearest established referen
 
 - Shared navigation config: `resources/js/config/navigation.ts`
 - Shared breadcrumb builders: `resources/js/config/breadcrumbs.ts`
+- The app sidebar renders `buildDashboardNavGroups()`: a "Menu" group for every account (Dashboard plus generated CRUD items) and, for owners only, a "Manage shop" group (Staff, Shop settings). The footer links to the personal "My account" and "Password" settings.
 - Active-state resolution lives in `resources/js/composables/useNavigation.ts`
 - Dashboard CRUD navigation discovery lives in `resources/js/config/dashboard-crud-navigation.ts`
 - Generated CRUD dashboard navigation contracts live at `resources/js/modules/<module>/contracts/dashboard-nav.ts`
@@ -483,7 +496,7 @@ When adding similar behavior, inspect and follow the nearest established referen
 ### Web Routes
 
 - Marketing:
-    - `GET /` -> `marketing.home`
+    - `GET /` -> `marketing.home` (redirect only: guests to `/auth/login`, signed-in accounts to `/app/dashboard`)
 - Auth guest routes under `/auth`:
     - `GET /auth/login` -> `auth.login.create`
     - `POST /auth/login` -> `auth.login.store`
@@ -496,10 +509,15 @@ When adding similar behavior, inspect and follow the nearest established referen
         - middleware: `auth`, `throttle:auth-sensitive`
     - `GET /auth/confirm-password` -> `auth.password.confirm`
     - `POST /auth/confirm-password` -> `auth.password.confirm.store`
-    - `POST /auth/logout` -> `auth.logout`
+    - `POST /auth/logout` -> `auth.logout` (redirects to `/auth/login`)
 - App shell:
     - `GET /app/dashboard` -> `app.dashboard`
         - middleware: `auth`, `verified`
+- Shop settings routes under `/app/shop` (no shop id: the shop is the signed-in owner's):
+    - `GET /app/shop/settings` -> `app.shop.settings.edit`
+    - `PUT /app/shop/settings` -> `app.shop.settings.update`
+    - middleware: `auth`, `verified`, `can:manage-shop`
+    - There is no shop deletion route.
 - Settings routes under `/app/settings`:
     - `GET /app/settings/profile` -> `app.settings.profile.edit`
     - `PATCH /app/settings/profile` -> `app.settings.profile.update`
@@ -538,8 +556,10 @@ When adding similar behavior, inspect and follow the nearest established referen
 
 - `AuthServiceProvider` registers policies from `ModuleRegistry::policyMap(...)`.
 - `AuthServiceProvider` requires all discovered module gate files.
-- Current module gate:
+- Current module gates:
     - `manage-users` in `app/Modules/Users/Routes/gates.php`
+    - `manage-shop` in `app/Modules/Shop/Routes/gates.php` (an owner who can sign in)
+- Navigation hides owner-only items from staff, but every owner screen is enforced by its gate on the backend; hiding a link is never the security boundary.
 - Current module policy:
     - `app/Modules/Users/Policies/UserPolicy.php`
 
@@ -565,7 +585,7 @@ When adding similar behavior, inspect and follow the nearest established referen
     - `withoutManifest()` so no transformer manifest file lands in `resources/js/types`
 - Route and controller type generation from the transformer stays off. Wayfinder owns that surface.
 - Current shared auth user contract is `App\Modules\Shared\Data\UserViewData|null`; do not serialize the raw user model into Inertia props.
-- `SharedPageData` and its nested `SharedAuthData`, `SharedFlashData`, and `SharedQuoteData` own application-wide Inertia props. `AppPageProps` composes the generated type with page-specific props. Flash fields are always present as `string|null`; do not redeclare these shapes in TypeScript.
+- `SharedPageData` and its nested `SharedAuthData`, `SharedShopData`, `SharedFlashData`, and `SharedQuoteData` own application-wide Inertia props. `AppPageProps` composes the generated type with page-specific props. Flash fields are always present as `string|null`; do not redeclare these shapes in TypeScript.
 - Request DTO hydration must be the canonical transport boundary.
 - Services, queries, commands, and handlers must accept DTOs or explicit typed parameters, never mixed arrays.
 - Prefer module-prefixed DTO names for generated CRUD contracts:
@@ -973,7 +993,8 @@ Do not shadow them with manual duplicates.
 - Current backend test areas already include:
     - auth flows
     - settings flows
-    - dashboard and marketing rendering
+    - dashboard rendering and the root redirect
+    - shop settings, shop context, and `ShopClock` business-day boundaries
     - users web management
     - users realtime
     - API v1 endpoints

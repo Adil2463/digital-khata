@@ -1,6 +1,6 @@
 import {
     buildDashboardFooterItems,
-    buildDashboardPrimaryItems,
+    buildDashboardNavGroups,
     buildMarketingFooterGroups,
     buildMarketingPrimaryAction,
     buildMarketingPrimaryItems,
@@ -53,7 +53,6 @@ export function useNavigation() {
     const withActiveItems = (items: NavItem[]): ActiveNavItem[] => items.map((item) => withActiveItem(item))
 
     const settingsNavItems = computed<ActiveNavItem[]>(() => withActiveItems(buildSettingsNavItems()))
-    const dashboardPrimaryItems = computed<ActiveNavItem[]>(() => withActiveItems(buildDashboardPrimaryItems(context.value)))
     const dashboardFooterItems = computed<ActiveNavItem[]>(() => withActiveItems(buildDashboardFooterItems()))
     const marketingPrimaryItems = computed<ActiveNavItem[]>(() => withActiveItems(buildMarketingPrimaryItems(context.value)))
     const marketingPrimaryAction = computed<ActiveNavItem>(() => withActiveItem(buildMarketingPrimaryAction(context.value)))
@@ -62,18 +61,20 @@ export function useNavigation() {
 
         return item === null ? null : withActiveItem(item)
     })
-    const marketingFooterGroups = computed<ActiveNavigationGroup[]>(() =>
-        buildMarketingFooterGroups(context.value).map((group) => ({
+    const withActiveGroups = (groups: NavigationGroup[]): ActiveNavigationGroup[] =>
+        groups.map((group) => ({
             ...group,
             items: withActiveItems(group.items)
         }))
-    )
+
+    const dashboardNavGroups = computed<ActiveNavigationGroup[]>(() => withActiveGroups(buildDashboardNavGroups(context.value)))
+    const marketingFooterGroups = computed<ActiveNavigationGroup[]>(() => withActiveGroups(buildMarketingFooterGroups(context.value)))
 
     return {
         isAuthenticated,
         isAdmin,
         settingsNavItems,
-        dashboardPrimaryItems,
+        dashboardNavGroups,
         dashboardFooterItems,
         marketingPrimaryItems,
         marketingPrimaryAction,

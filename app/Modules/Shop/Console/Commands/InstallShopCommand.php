@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Shop\Console\Commands;
 
-use App\Models\Shop;
+use App\Enums\ShopTimezone;
 use App\Models\User;
 use App\Modules\Shared\Auth\DemoAccounts;
 use App\Modules\Shop\Commands\ShopCommands;
@@ -12,6 +12,7 @@ use App\Modules\Shop\Data\InstallShopData;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Rules\Password;
 
 use function Laravel\Prompts\confirm;
@@ -22,7 +23,7 @@ final class InstallShopCommand extends Command
 {
     protected $signature = 'khata:install
         {--shop-name= : Shop name printed on receipts}
-        {--timezone='.Shop::DEFAULT_TIMEZONE.' : Shop timezone used for business dates}
+        {--timezone='.ShopTimezone::DEFAULT->value.' : Shop timezone used for business dates (V1 supports Asia/Karachi only)}
         {--owner-name= : Owner display name}
         {--owner-email= : Owner login (email format; no email is ever sent)}';
 
@@ -59,10 +60,12 @@ final class InstallShopCommand extends Command
 
         $validator = Validator::make($input, [
             'shop_name' => ['required', 'string', 'max:120'],
-            'timezone' => ['required', 'timezone:all'],
+            'timezone' => ['required', 'string', new Enum(ShopTimezone::class)],
             'owner_name' => ['required', 'string', 'max:255'],
             'owner_email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class.',email'],
             'owner_password' => ['required', 'string', 'confirmed', Password::defaults()],
+        ], [
+            'timezone' => 'The timezone must be one of: '.implode(', ', array_column(ShopTimezone::cases(), 'value')).'.',
         ]);
 
         if ($validator->fails()) {
@@ -91,7 +94,7 @@ final class InstallShopCommand extends Command
         $shopInstallationResult = $this->shopCommands->install(
             new InstallShopData(
                 shopName: $input['shop_name'],
-                timezone: $input['timezone'],
+                timezone: ShopTimezone::from($input['timezone']),
                 ownerName: $input['owner_name'],
                 ownerEmail: $input['owner_email'],
                 ownerPassword: $input['owner_password'],
@@ -101,7 +104,7 @@ final class InstallShopCommand extends Command
 
         $this->components->info('Digital Khata is installed.');
         $this->components->twoColumnDetail('Shop', $shopInstallationResult->shop->name);
-        $this->components->twoColumnDetail('Timezone', $shopInstallationResult->shop->timezone);
+        $this->components->twoColumnDetail('Timezone', $shopInstallationResult->shop->timezone->value);
         $this->components->twoColumnDetail('Owner login', $shopInstallationResult->owner->email);
         $this->components->twoColumnDetail('Locked demo accounts', (string) count($shopInstallationResult->lockedAccountEmails));
         $this->components->twoColumnDetail('Existing accounts attached to the shop', (string) $shopInstallationResult->attachedUserCount);

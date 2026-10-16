@@ -4,6 +4,7 @@ import Auth from './Auth'
 import Dashboard from './Dashboard'
 import Settings from './Settings'
 import Users from './Users'
+import Shop from './Shop'
 
 const Modules = {
     Api: Object.assign(Api, Api),
@@ -12,6 +13,7 @@ const Modules = {
     Dashboard: Object.assign(Dashboard, Dashboard),
     Settings: Object.assign(Settings, Settings),
     Users: Object.assign(Users, Users),
+    Shop: Object.assign(Shop, Shop),
 }
 
 export default Modules

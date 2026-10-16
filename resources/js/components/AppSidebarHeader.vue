@@ -9,6 +9,8 @@
             breadcrumbs: () => []
         }
     )
+
+    const shop = useCurrentShop()
 </script>
 
 <template>
@@ -20,6 +22,7 @@
             <template v-if="breadcrumbs && breadcrumbs.length > 0">
                 <Breadcrumbs class="hidden min-w-0 sm:block" :breadcrumbs="breadcrumbs" />
             </template>
+            <span v-if="shop" class="min-w-0 truncate text-sm font-medium sm:hidden">{{ shop.name }}</span>
         </div>
     </header>
 </template>

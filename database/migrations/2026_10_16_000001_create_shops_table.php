@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Models\Shop;
+use App\Enums\ShopTimezone;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,7 +19,7 @@ return new class extends Migration
             $blueprint->string('name', 120);
             $blueprint->string('phone', 20)->nullable();
             $blueprint->string('address')->nullable();
-            $blueprint->string('timezone', 64)->default(Shop::DEFAULT_TIMEZONE);
+            $blueprint->string('timezone', 64)->default(ShopTimezone::DEFAULT->value);
             $blueprint->string('receipt_footer')->nullable();
             $blueprint->timestamps();
         });

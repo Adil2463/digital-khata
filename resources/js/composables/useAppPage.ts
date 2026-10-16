@@ -16,6 +16,12 @@ export function useAppPage<T extends Record<string, unknown> = Record<string, un
     return usePage<AppPageProps<T>>()
 }
 
+export function useCurrentShop(): ComputedRef<AppPageProps['shop']> {
+    const page = useAppPage()
+
+    return computed(() => page.props.shop)
+}
+
 export function useAuthUser(options: RequiredAuthUserOptions): ComputedRef<AuthUser>
 export function useAuthUser(options?: UseAuthUserOptions): ComputedRef<AuthUser | null>
 export function useAuthUser(options: UseAuthUserOptions = {}): ComputedRef<AuthUser | null> {
